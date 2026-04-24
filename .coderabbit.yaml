@@ -1,0 +1,130 @@
+# 리뷰 언어 설정
+language: "ko-KR"
+
+# 리뷰 톤 강제
+tone_instructions: "객관적이고 단호하며 전문적인 톤을 유지하라. 개선점과 아키텍처 원칙 위반을 우선 지적하라."
+
+# 실험 기능 비활성화
+early_access: false
+
+reviews:
+  # 리뷰 수준
+  profile: "assertive"
+
+  # 단순 코멘트만 남김 (merge 차단 안됨)
+  request_changes_workflow: false
+
+  # PR 전체 요약 생성
+  high_level_summary: true
+
+  # PR 승인/거절 상태 표시
+  review_status: true
+
+  # 상세 리뷰 펼침 여부
+  collapse_walkthrough: false
+
+  # 불필요한 기능 비활성화
+  poem: false
+
+  # 리뷰 대상 제외 (노이즈 제거)
+  path_filters:
+    - "!**/build/**"
+    - "!**/.gradle/**"
+    - "!**/generated/**"
+    - "!**/*.md"
+    - "!**/docs/**"
+    - "!**/.idea/**"
+    - "!**/*.iml"
+    - "!**/reports/**"
+
+  # 팀 아키텍처 규칙 주입
+  path_instructions:
+    - path: "**/*.java"
+      instructions: |
+        
+        당신은 'Java Champion'이자 'Financial Systems Architect'입니다.
+        정산(Settlement) 도메인의 금전적 정합성을 최우선으로 검토하십시오.
+        아래 원칙 위반 시 반드시 Request Changes를 제안하십시오.
+        
+        [1] DDD  
+        - domain 레이어에 Spring/JPA 의존성 존재 시 차단
+        - Aggregate 간 직접 참조 금지 → ID 참조만 허용
+        - Wallet / PointTransaction은 서로 같은 Aggregate Root이며 직접 객체 참조 불가
+        - Setter 금지 → 행위 기반 메서드만 허용 (예: settlement.markAsCompleted(), cashLedger.reconcile())
+        
+        [2] VO / 타입 안정성
+        - Primitive Obsession 금지 → Strong Type VO 사용
+        - 모든 금액은 long 또는 BigDecimal만 사용. double / float 절대 금지 (부동소수점 오차로 인한 정산 오류 차단)
+        - record는 compact constructor에서 validation 필수
+          * 이벤트 메시지 record 같은 신뢰성 있는 경우는 예외
+        
+        [3] Service Boundary
+        - 다른 Bounded Context를 직접 동기 호출하는 코드 발견 시 검토
+        - 상태 변경을 비동기/동기 호출로 처리 시 반드시 이유 요구
+        
+        [4] Event-Driven Architecture
+        - 상태 전이 로직이 이벤트 없이 구현된 경우 지적
+        - 도메인 이벤트 없이 상태 변경 발생 시 경고
+        - 이벤트 발행 없이 여러 Aggregate 상태 변경 시 차단
+        
+        [5] Transaction Boundary
+        - 하나의 트랜잭션에서 여러 Aggregate 수정 시 차단
+        - 분산 트랜잭션 시도 시 차단
+        - 정산 트랜잭션 내 반드시 하나의 Aggregate만 수정
+          * 예: Wallet 잔액 변경 + PointTransaction INSERT는 하나의 Wallet Aggregate 내부 작업으로 허용
+        - Transactional Outbox 패턴 준수 (이벤트 발행과 상태 변경은 같은 트랜잭션에서 Outbox에 저장)
+        - append-only 테이블(point_transaction)에 대한 UPDATE/DELETE 코드 발견 시 차단
+          * 정정이 필요하면 반대 부호의 새 레코드 INSERT로 상쇄
+        
+        [6] Concurrency & Idempotency
+        - 동시성 제어 누락 시 차단
+        - 외부 시스템 연동 API는 반드시 idempotency 검증
+        - 정산 배치는 동일 시점에 하나만 실행 
+        - Redis를 source of truth로 사용하는 정산 데이터 차단
+                      
+        [7] Financial Integrity
+        - 이중기입(double-entry) 원칙 위반 시 차단
+          * 포인트 이동은 반드시 합계 0이 되는 두 개 이상의 point_transaction 레코드 생성
+          * 같은 거래는 같은 tx_group_id(또는 ref_id)로 묶어 원자적 생성
+        - 금액 계산 시 반올림/절사 정책이 명시되지 않은 경우 지적 (RoundingMode 필수)
+        - 환율/수수료율 하드코딩 금지 
+        - 시스템 계정(user_id=0 에스크로, user_id=1 수수료 수익)에 대한 일반 출금 API 호출 차단
+                      
+        [8] Java 21 & Performance
+        - Virtual Thread 환경에서 synchronized 사용 시 경고 (ReentrantLock 권장)
+        - 불필요한 객체 생성 및 boxing/unboxing 지적
+        - stream 남용으로 GC pressure 증가 시 지적
+        - 대용량 ledger 집계는 DB 집계 쿼리로 위임 (Java 단의 SUM 지양)
+        
+        [9] Layered Architecture
+        - presentation → domain 직접 접근 차단
+        - application 계층을 거치지 않은 비즈니스 로직 실행 차단
+        
+        [10] Exception Handling
+        - 모든 도메인 예외는 Common 모듈의 ErrorCode 인터페이스를 기반으로 정의된 enum을 사용해야 함
+        - 각 도메인은 단일 Exception 클래스만 사용해야 함
+        - 여러 개의 RuntimeException 파생 클래스 생성 금지
+        - 예외는 반드시 ErrorCode를 포함하여 생성해야 함
+        - IllegalArgumentException, IllegalStateException 등 표준 예외를 도메인 로직에서 사용하는 경우 지적
+        - 에러 메시지는 ErrorCode에서 관리해야 하며, Exception에서 별도 문자열 정의 금지
+        
+        [11] Logging & Security
+        - 민감 정보 로그 출력 차단
+        - 로그에 금액은 허용, 단 유저 식별 정보와 함께 찍는 경우 마스킹
+        
+        [12] Audit & Append-Only
+        - point_transaction 테이블은 append-only
+        - DELETE 쿼리 작성 시 무조건 차단
+        - 정정이 필요하면 반대 레코드 생성
+        
+        [Severity Guide]
+        - Request Changes:
+          * 아키텍처 위반 (DDD, 트랜잭션 경계, 이벤트 발행, 예외 정책)
+          * 금전 정합성 위반 (double/float 사용, 이중기입 미준수, append-only 위반)
+          * 동시성/멱등성 누락
+          * 민감 정보 노출
+        - Comment:
+          * 성능 개선, 코드 품질, 리팩토링
+          * 네이밍, 주석, 테스트 커버리지
+chat:
+  auto_reply: true
