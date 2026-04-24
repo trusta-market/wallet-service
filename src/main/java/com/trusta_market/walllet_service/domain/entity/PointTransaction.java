@@ -5,8 +5,7 @@ import java.util.UUID;
 
 import com.trusta_market.walllet_service.domain.enums.PointTxStatus;
 import com.trusta_market.walllet_service.domain.enums.PointTxType;
-import com.trusta_market.walllet_service.domain.vo.BalanceChange;
-import com.trusta_market.walllet_service.domain.vo.Reference;
+import com.trusta_market.walllet_service.domain.enums.RefType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -20,7 +19,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "p_point_transactions")
 @Entity
 public class PointTransaction {
@@ -47,5 +49,38 @@ public class PointTransaction {
 	private PointTxStatus status;
 
 	private Instant createdAt;
+
+	public static PointTransaction create(
+		Wallet wallet,
+		long balanceBefore,
+		long changedBalance,
+		PointTxType pointTxType,
+		UUID refId,
+		RefType refType
+	) {
+		if (wallet == null) {
+			throw new IllegalArgumentException("지갑은 필수");
+		}
+		if (pointTxType == null) {
+			throw new IllegalArgumentException("트랜잭션 타입은 필수");
+		}
+		validateTypeAndAmount(pointTxType, changedBalance);
+
+		PointTransaction tx = new PointTransaction();
+		tx.wallet = wallet;
+		tx.balanceChange = BalanceChange.of(balanceBefore, changedBalance);
+		tx.pointTxType = pointTxType;
+		tx.ref = Reference.of(refId, refType);
+		return tx;
+	}
+
+	private static void validateTypeAndAmount(PointTxType type, long amount) {
+		if (type.isIncrease() && amount <= 0) {
+			throw new IllegalArgumentException("타입은 양수여야 함.");
+		}
+		if (type.isDecrease() && amount >= 0) {
+			throw new IllegalArgumentException("타입은 음수여야 함.");
+		}
+	}
 
 }
