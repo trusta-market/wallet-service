@@ -3,7 +3,6 @@ package com.trusta_market.walllet_service.domain.entity;
 import java.util.UUID;
 
 import com.trusta_market.walllet_service.domain.enums.WalletStatus;
-import com.trusta_market.walllet_service.domain.vo.Point;
 
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -24,8 +23,36 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	private UUID userId;
 
 	@Embedded
-	private Point balance;
+	private WalletPoint balance;
 
 	@Enumerated(EnumType.STRING)
 	private WalletStatus status;
+
+	public static Wallet create(UUID userId) {
+		Wallet wallet = new Wallet();
+		wallet.userId = userId;
+		wallet.balance = WalletPoint.of(0);
+		wallet.status = WalletStatus.ACTIVE;
+		return wallet;
+	}
+
+	private void validateActive() {
+		if (status != WalletStatus.ACTIVE) {
+			throw new RuntimeException("지갑이 활성 상태가 아닙니다.");
+		}
+	}
+
+	public void freeze() {
+		if (status == WalletStatus.CLOSED) {
+			throw new IllegalStateException("종료된 지갑은 동결할 수 없습니다");
+		}
+		this.status = WalletStatus.FROZEN;
+	}
+
+	public void close() {
+		if (!balance.isZero()) {
+			throw new IllegalStateException("잔액이 남은 지갑은 종료할 수 없습니다");
+		}
+		this.status = WalletStatus.CLOSED;
+	}
 }
