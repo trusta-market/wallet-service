@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @Entity
 public class PointTransaction {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID pointTransactionId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
