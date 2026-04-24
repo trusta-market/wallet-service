@@ -3,7 +3,6 @@ package com.trusta_market.walllet_service.domain.entity;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.trusta_market.walllet_service.domain.enums.PointTxStatus;
 import com.trusta_market.walllet_service.domain.enums.PointTxType;
 import com.trusta_market.walllet_service.domain.enums.RefType;
 
@@ -43,10 +42,6 @@ public class PointTransaction {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "tx_type", nullable = false)
 	private PointTxType pointTxType;
-
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private PointTxStatus status;
 
 	private Instant createdAt;
 
