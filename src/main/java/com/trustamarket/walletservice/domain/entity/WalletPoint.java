@@ -15,6 +15,9 @@ record WalletPoint(long point) {
 	}
 
 	boolean isEnough(long value) {
+		if (value < 0) {
+			throw new IllegalArgumentException("사용할 포인트 가격도 0 이상이어야 함.");
+		}
 		return this.point >= value;
 	}
 
