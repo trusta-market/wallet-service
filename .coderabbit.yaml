@@ -47,7 +47,7 @@ reviews:
         아래 원칙 위반 시 반드시 Request Changes를 제안하십시오.
         
         [1] DDD  
-        - domain 레이어에 Spring/JPA 의존성 존재 시 차단
+        - domain 레이어에 Spring/JPA 의존성 존재 시 원래 차단해야하지만 MVP위해 허용
         - Aggregate 간 직접 참조 금지 → ID 참조만 허용
         - Wallet / PointTransaction은 서로 같은 Aggregate Root이며 직접 객체 참조 불가
         - Setter 금지 → 행위 기반 메서드만 허용 (예: settlement.markAsCompleted(), cashLedger.reconcile())
