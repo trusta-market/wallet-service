@@ -29,6 +29,9 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	private WalletStatus status;
 
 	public static Wallet create(UUID userId) {
+		if (userId == null) {
+			throw new IllegalArgumentException("userId는 필수입니다");
+		}
 		Wallet wallet = new Wallet();
 		wallet.userId = userId;
 		wallet.balance = WalletPoint.of(0);
@@ -43,6 +46,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	}
 
 	public void freeze() {
+		validateActive();
 		if (status == WalletStatus.CLOSED) {
 			throw new IllegalStateException("종료된 지갑은 동결할 수 없습니다");
 		}
@@ -50,6 +54,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	}
 
 	public void close() {
+		validateActive();
 		if (!balance.isZero()) {
 			throw new IllegalStateException("잔액이 남은 지갑은 종료할 수 없습니다");
 		}
