@@ -47,9 +47,6 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 
 	public void freeze() {
 		validateActive();
-		if (status == WalletStatus.CLOSED) {
-			throw new IllegalStateException("종료된 지갑은 동결할 수 없습니다");
-		}
 		this.status = WalletStatus.FROZEN;
 	}
 
