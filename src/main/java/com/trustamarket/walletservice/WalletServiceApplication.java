@@ -1,4 +1,4 @@
-package com.trusta_market.settlement_service;
+package com.trustamarket.walletservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
