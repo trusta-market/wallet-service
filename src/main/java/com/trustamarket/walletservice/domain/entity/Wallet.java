@@ -1,8 +1,8 @@
-package com.trusta_market.walllet_service.domain.entity;
+package com.trustamarket.walletservice.domain.entity;
 
 import java.util.UUID;
 
-import com.trusta_market.walllet_service.domain.enums.WalletStatus;
+import com.trustamarket.walletservice.domain.enums.WalletStatus;
 
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;

@@ -1,4 +1,4 @@
-package com.trusta_market.walllet_service.domain.entity;
+package com.trustamarket.walletservice.domain.entity;
 
 import jakarta.persistence.Embeddable;
 
