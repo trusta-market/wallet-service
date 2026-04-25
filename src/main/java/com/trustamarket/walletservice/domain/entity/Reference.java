@@ -28,6 +28,13 @@ record Reference(
 		return new Reference(orderId, RefType.ORDER);
 	}
 
+	/**
+	 * 출금(Withdrawal) 행위에 대한 Reference를 생성
+	 * 출금은 PAYMENT의 데이터와 연관되어 참조하므로 RefType.PAYMENT를 사용
+	 * 결제와 point변화 관계를 알기 위해 사용
+	 * 
+	 * `@param` payoutId 참조하는 Payment 객체의 ID
+	 */
 	static Reference withdrawal(UUID payoutId) {
 		return new Reference(payoutId, RefType.PAYMENT);
 	}
