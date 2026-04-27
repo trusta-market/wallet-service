@@ -13,6 +13,6 @@ public class WalletRepositoryImpl implements WalletRepository {
 	private final WalletJpaRepository walletJpaRepository;
 
 	public Wallet save(Wallet wallet) {
-		walletJpaRepository.save(wallet);
+		return walletJpaRepository.save(wallet);
 	}
 }
