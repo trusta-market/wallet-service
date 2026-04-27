@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trustamarket.walletservice.application.command.WalletCommandService;
+import com.trustamarket.walletservice.application.dto.result.CreateWalletResult;
+import com.trustamarket.walletservice.presentation.dto.response.CreateWalletResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,10 +19,10 @@ import lombok.RequiredArgsConstructor;
 public class WalletInternalController {
 	private final WalletCommandService walletCommandService;
 	@PostMapping
-	public ResponseEntity<Void> createWallet(UUID userId) { // return 타입과 파라미터 수정 필요
+	public ResponseEntity<CreateWalletResponse> createWallet(UUID userId) { // return 타입과 파라미터 수정 필요
 
-		walletCommandService.createWallet(userId);
+		CreateWalletResult result = walletCommandService.createWallet(userId);
 
-		return new ResponseEntity<>(null);
+		return new ResponseEntity<>(new CreateWalletResponse(result.walletId()), null); // common response로
 	}
 }
