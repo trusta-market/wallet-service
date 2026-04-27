@@ -12,11 +12,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
 @Table(name = "p_wallets")
 @Entity
 public class Wallet { //createdAt, updatedAt baseEntity 상속
 	@Id
+	@Getter
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID walletId;
 
