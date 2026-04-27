@@ -14,10 +14,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import com.trustamarket.walletservice.application.command.WalletCommandServiceImpl;
 import com.trustamarket.walletservice.domain.entity.Wallet;
+import com.trustamarket.walletservice.domain.exception.WalletErrorCode;
+import com.trustamarket.walletservice.domain.exception.WalletException;
 import com.trustamarket.walletservice.domain.repository.WalletRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,17 +56,17 @@ class WalletCommandServiceTest {
 		}
 
 		@Test
-		@DisplayName("동시성으로 DB 제약 위반 시 WalletAlreadyExistsException으로 변환된다")
-		void createWallet_dataIntegrityViolation_throwsWalletAlreadyExistsException() {
+		@DisplayName("이미 지갑이 존재하는 userId로 생성 시 WalletException이 발생한다")
+		void createWallet_existingUser_throwsWalletException() {
 			// given
 			UUID userId = UUID.randomUUID();
 
-			when(walletRepository.save(any(Wallet.class)))
-				.thenThrow(new DataIntegrityViolationException("Duplicate key"));
+			when(walletRepository.existsByUserId(userId)).thenReturn(true);
 
-			// when & then
 			assertThatThrownBy(() -> walletCommandService.createWallet(userId))
-				.isInstanceOf(RuntimeException.class);
+				.isInstanceOf(WalletException.class)
+				.extracting("errorCode")
+				.isEqualTo(WalletErrorCode.ALREADY_EXISTS_WALLET);
 		}
 	}
 }
