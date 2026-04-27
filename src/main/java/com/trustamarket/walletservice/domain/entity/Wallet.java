@@ -12,9 +12,18 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 
-@Table(name = "p_wallets")
+@Table(
+	name = "p_wallets",
+	uniqueConstraints = {
+		@UniqueConstraint(
+			name = "uk_wallet_user_id",
+			columnNames = {"user_id"}
+		)
+	}
+)
 @Entity
 public class Wallet { //createdAt, updatedAt baseEntity 상속
 	@Id
@@ -25,7 +34,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	private UUID userId;
 
 	@Embedded
-	private WalletPoint balance;
+	private WalletPoint balance; // 이벤트 등 종류가 늘어나면 List 고려될 수도 있음
 
 	@Enumerated(EnumType.STRING)
 	private WalletStatus status;
@@ -58,5 +67,13 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 			throw new IllegalStateException("잔액이 남은 지갑은 종료할 수 없습니다");
 		}
 		this.status = WalletStatus.CLOSED;
+	}
+
+	public UUID getWalletOwner() {
+		return this.userId;
+	}
+
+	public long checkBalance() {
+		return this.balance.point();
 	}
 }
