@@ -25,6 +25,6 @@ public class WalletInternalController {
 
 		CreateWalletResult result = walletCommandService.createWallet(userId);
 
-		return new CommonResponse(HttpStatus.CREATED.value(), new CreateWalletResponse(result.walletId()));
+		return new CommonResponse<>(HttpStatus.CREATED.value(), new CreateWalletResponse(result.walletId()));
 	}
 }
