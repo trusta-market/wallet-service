@@ -13,8 +13,8 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/wallets")
-public class WalletController {
+@RequestMapping("/internal/wallets")
+public class WalletInternalController {
 	private final WalletCommandService walletCommandService;
 	@PostMapping
 	public ResponseEntity<Void> createWallet(UUID userId) { // return 타입과 파라미터 수정 필요
