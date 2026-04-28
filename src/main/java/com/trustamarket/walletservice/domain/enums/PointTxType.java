@@ -5,7 +5,8 @@ public enum PointTxType {
 	PAYMENT(Direction.DECREASE),
 	REFUND(Direction.INCREASE),
 	WITHDRAW(Direction.DECREASE),
-	SETTLEMENT(Direction.DECREASE);
+	SETTLEMENT_IN(Direction.INCREASE),
+	SETTLEMENT_OUT(Direction.DECREASE);
 
 	private final Direction direction;
 

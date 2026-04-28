@@ -2,6 +2,8 @@ package com.trustamarket.walletservice.domain.entity;
 
 import java.util.UUID;
 
+import com.trustamarket.walletservice.domain.enums.PointTxType;
+import com.trustamarket.walletservice.domain.enums.RefType;
 import com.trustamarket.walletservice.domain.enums.WalletStatus;
 
 import jakarta.persistence.Embedded;
@@ -48,6 +50,43 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		wallet.balance = WalletPoint.of(0);
 		wallet.status = WalletStatus.ACTIVE;
 		return wallet;
+	}
+
+	public PointTransaction settleIn(long amount, UUID refId) {
+		return increase(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_IN);
+	}
+
+	public PointTransaction settleOut(long amount, UUID refId) {
+		return decrease(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_OUT);
+	}
+
+	private PointTransaction increase(long amount, UUID refId, RefType refType, PointTxType txType) {
+		validateActive();
+		if (amount <= 0) {
+			throw new IllegalArgumentException("충전 금액은 0보다 커야 합니다");
+		}
+
+		long balanceBefore = this.balance.point();
+		this.balance = this.balance.increase(amount);
+
+		return PointTransaction.create(
+			this, balanceBefore, amount, txType, refId, refType
+		);
+	}
+
+	private PointTransaction decrease(long amount, UUID refId, RefType refType, PointTxType txType) {
+		validateActive();
+
+		if (amount <= 0) {
+			throw new IllegalArgumentException("차감 금액은 0보다 커야 합니다");
+		}
+
+		long balanceBefore = this.balance.point();
+		this.balance = this.balance.decrease(amount);
+
+		return PointTransaction.create(
+			this, balanceBefore, -amount, txType, refId, refType
+		);
 	}
 
 	private void validateActive() {
