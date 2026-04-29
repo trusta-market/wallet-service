@@ -1,4 +1,4 @@
-package com.trustamarket.walletservice.infrastructure;
+package com.trustamarket.walletservice.infrastructure.persistence;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.trustamarket.walletservice.domain.entity.Wallet;
 import com.trustamarket.walletservice.domain.enums.WalletType;
 import com.trustamarket.walletservice.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.infrastructure.persistence.jpa.WalletJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 

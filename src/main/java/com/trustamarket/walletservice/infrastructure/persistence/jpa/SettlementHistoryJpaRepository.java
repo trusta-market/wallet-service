@@ -1,4 +1,4 @@
-package com.trustamarket.walletservice.infrastructure;
+package com.trustamarket.walletservice.infrastructure.persistence.jpa;
 
 import java.util.UUID;
 

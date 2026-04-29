@@ -1,4 +1,4 @@
-package com.trustamarket.walletservice.infrastructure;
+package com.trustamarket.walletservice.infrastructure.persistence;
 
 import java.util.UUID;
 
@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import com.trustamarket.walletservice.domain.entity.SettlementHistory;
 import com.trustamarket.walletservice.domain.repository.SettlementHistoryRepository;
+import com.trustamarket.walletservice.infrastructure.persistence.jpa.SettlementHistoryJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 
