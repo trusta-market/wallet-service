@@ -39,7 +39,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	@Embedded
 	private WalletPoint balance; // 이벤트 등 종류가 늘어나면 List 고려될 수도 있음
 
-	@Embedded
+	@Enumerated(EnumType.STRING)
 	private WalletType walletType; // 이벤트 등 종류가 늘어나면 List 고려될 수도 있음
 
 	@Enumerated(EnumType.STRING)
