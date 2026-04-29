@@ -6,15 +6,18 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
-
 @Component
-@RequiredArgsConstructor
 public class FixedFeeRatePolicy implements FeeRatePolicy {
 
 	//MVP 이후 DB로 변경 고려
-	@Value("${point.fee.fixedRate:0.05}")
-	private BigDecimal rate;
+	private final BigDecimal rate;
+
+	public FixedFeeRatePolicy(@Value("${point.fee.fixedRate}") BigDecimal rate) {
+		if (rate == null || rate.signum() < 0 || rate.compareTo(BigDecimal.ONE) > 0) {
+			throw new IllegalArgumentException("point.fee.fixedRate는 0 이상 1 이하여야 합니다.");
+		}
+		this.rate = rate;
+	}
 
 	@Override
 	public BigDecimal getRate(UUID sellerId) {
