@@ -16,12 +16,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "p_settlement_history")
+@Table(
+	name = "p_settlement_history"
+	// uniqueConstraints = { // 이름 바뀔 가능성 때문에 우선 @Column에 unique로 표시
+	// 	@UniqueConstraint(
+	// 		name = "uk_settlement_event_id",
+	// 		columnNames = {"event_id"}
+	// 	)
+	// }
+)
 public class SettlementHistory {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID settlementHistoryId;
 
+	// inbox와 exactly-once 고려, orderId+status고려
 	@Column(nullable = false, unique = true)
 	private UUID eventId;
 
@@ -38,7 +47,7 @@ public class SettlementHistory {
 	private long sellerAmount;
 
 	@Column(nullable = false)
-	private long feeAmount;
+	private long feeRevenueAmount;
 
 	@Column(precision = 5, scale = 4)
 	private BigDecimal appliedFeeRate;
@@ -56,7 +65,7 @@ public class SettlementHistory {
 		UUID sellerId,
 		long totalAmount,
 		long sellerAmount,
-		long feeAmount,
+		long feeRevenueAmount,
 		BigDecimal appliedFeeRate
 	) {
 		SettlementHistory history = new SettlementHistory();
@@ -65,7 +74,7 @@ public class SettlementHistory {
 		history.sellerId = sellerId;
 		history.totalAmount = totalAmount;
 		history.sellerAmount = sellerAmount;
-		history.feeAmount = feeAmount;
+		history.feeRevenueAmount = feeRevenueAmount;
 		history.appliedFeeRate = appliedFeeRate;
 		history.status = PointSettlementStatus.COMPLETED;
 		history.processedAt = Instant.now();
