@@ -30,7 +30,7 @@ public class WalletCommandServiceImpl implements WalletCommandService{
 			throw new WalletException(ALREADY_EXISTS_WALLET);
 		}
 
-		Wallet wallet = Wallet.create(userId);
+		Wallet wallet = Wallet.createUserWallet(userId);
 		walletRepository.save(wallet); //DataIntegrity exception은 RestControllerAdvice에서 처리
 		return new CreateWalletResult(wallet.getWalletId());
 	}

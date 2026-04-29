@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.trustamarket.walletservice.domain.enums.PointTxType;
 import com.trustamarket.walletservice.domain.enums.RefType;
 import com.trustamarket.walletservice.domain.enums.WalletStatus;
+import com.trustamarket.walletservice.domain.enums.WalletType;
 
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -38,10 +39,13 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	@Embedded
 	private WalletPoint balance; // 이벤트 등 종류가 늘어나면 List 고려될 수도 있음
 
+	@Embedded
+	private WalletType walletType; // 이벤트 등 종류가 늘어나면 List 고려될 수도 있음
+
 	@Enumerated(EnumType.STRING)
 	private WalletStatus status;
 
-	public static Wallet create(UUID userId) {
+	public static Wallet createUserWallet(UUID userId) {
 		if (userId == null) {
 			throw new IllegalArgumentException("userId는 필수입니다");
 		}
@@ -49,6 +53,32 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		wallet.userId = userId;
 		wallet.balance = WalletPoint.of(0);
 		wallet.status = WalletStatus.ACTIVE;
+		wallet.walletType = WalletType.USER;
+		return wallet;
+	}
+
+	//MVP 이후 wallet생성에서 system wallet 생성도 수정 예정
+	public static Wallet createSystemWallet(UUID userId) {
+		if (userId == null) {
+			throw new IllegalArgumentException("userId는 필수입니다");
+		}
+		Wallet wallet = new Wallet();
+		wallet.userId = userId;
+		wallet.balance = WalletPoint.of(0);
+		wallet.status = WalletStatus.ACTIVE;
+		wallet.walletType = WalletType.SYSTEM_ESCROW;
+		return wallet;
+	}
+
+	public static Wallet createSystemFeeWallet(UUID userId) {
+		if (userId == null) {
+			throw new IllegalArgumentException("userId는 필수입니다");
+		}
+		Wallet wallet = new Wallet();
+		wallet.userId = userId;
+		wallet.balance = WalletPoint.of(0);
+		wallet.status = WalletStatus.ACTIVE;
+		wallet.walletType = WalletType.SYSTEM_FEE;
 		return wallet;
 	}
 
@@ -58,6 +88,10 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 
 	public PointTransaction settleOut(long amount, UUID refId) {
 		return decrease(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_OUT);
+	}
+
+	public PointTransaction increaseFeeRevenue(long amount, UUID refId) {
+		return increase(amount, refId, RefType.ORDER, PointTxType.FEE_REVENUE);
 	}
 
 	private PointTransaction increase(long amount, UUID refId, RefType refType, PointTxType txType) {
