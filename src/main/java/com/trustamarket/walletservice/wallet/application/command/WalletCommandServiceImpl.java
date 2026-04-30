@@ -10,9 +10,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCommand;
 import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
+import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
+import com.trustamarket.walletservice.wallet.domain.enums.RefType;
+import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
@@ -41,6 +46,31 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		Wallet wallet = Wallet.createUserWallet(userId);
 		walletRepository.save(wallet); //DataIntegrity exception은 RestControllerAdvice에서 처리
 		return new CreateWalletResult(wallet.getWalletId());
+	}
+
+	@Transactional
+	public UseWalletResult usePoint(UseWalletCommand command) {
+		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
+			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+
+		Wallet systemEscrow = systemWalletProvider.getEscrowWallet();
+
+		long currentBalance = buyerWallet.checkBalance();
+		if (currentBalance < command.totalAmount()) {
+			long shortage = command.totalAmount() - currentBalance;
+			return UseWalletResult.insufficient(currentBalance, shortage);
+		}
+
+		PointTransaction userTx = buyerWallet.decrease(
+			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.PAYMENT
+		);
+		PointTransaction escrowTx = systemEscrow.increase(
+			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.PAYMENT
+		);
+
+		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));
+
+		return UseWalletResult.success(buyerWallet.checkBalance());
 	}
 
 	@Override

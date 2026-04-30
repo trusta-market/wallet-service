@@ -7,6 +7,7 @@ import com.trustamarket.common.exception.ErrorCodeSpec;
 public enum WalletErrorCode implements ErrorCodeSpec {
 
 	// WALLET_2XX → 비즈니스 규칙 위반
+	INVALID_DEDUCTION_AMOUNT("WALLET_201", HttpStatus.BAD_REQUEST, "차감 금액은 0보다 커야 합니다.", "amount"),
 
 	// WALLET_3XX → 조회 실패 (NOT_FOUND)
 	WALLET_NOT_FOUND("WALLET_301", HttpStatus.NOT_FOUND, "지갑을 찾을 수 없습니다.", "userId"),
