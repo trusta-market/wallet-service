@@ -124,10 +124,7 @@ class WalletCommandServiceTest {
 			Wallet buyerWallet = Wallet.createUserWallet(buyerId);
 			buyerWallet.increase(1000L, orderId, RefType.ORDER, PointTxType.CHARGE);
 
-			Wallet escrowWallet = Wallet.createSystemWallet(UUID.randomUUID());
-
 			given(walletRepository.findByUserId(buyerId)).willReturn(Optional.of(buyerWallet));
-			given(systemWalletProvider.getEscrowWallet()).willReturn(escrowWallet);
 
 			// when
 			UseWalletResult result = walletCommandService.usePoint(command);

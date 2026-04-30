@@ -52,14 +52,14 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	public UseWalletResult usePoint(UseWalletCommand command) {
 		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
-
-		Wallet systemEscrow = systemWalletProvider.getEscrowWallet();
-
+		
 		long currentBalance = buyerWallet.checkBalance();
 		if (currentBalance < command.totalAmount()) {
 			long shortage = command.totalAmount() - currentBalance;
 			return UseWalletResult.insufficient(currentBalance, shortage);
 		}
+
+		Wallet systemEscrow = systemWalletProvider.getEscrowWallet();
 
 		PointTransaction userTx = buyerWallet.decrease(
 			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.BUYER_PAYMENT
