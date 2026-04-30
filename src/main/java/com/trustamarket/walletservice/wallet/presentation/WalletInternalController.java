@@ -18,6 +18,7 @@ import com.trustamarket.walletservice.wallet.presentation.dto.request.UseWalletR
 import com.trustamarket.walletservice.wallet.presentation.dto.response.CreateWalletResponse;
 import com.trustamarket.walletservice.wallet.presentation.dto.response.UseWalletResponse;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -35,7 +36,7 @@ public class WalletInternalController {
 	}
 
 	@PatchMapping("/usages")
-	public CommonResponse<UseWalletResponse> usePoint (@RequestBody UseWalletRequest request) {
+	public CommonResponse<UseWalletResponse> usePoint (@Valid @RequestBody UseWalletRequest request) {
 		UseWalletResult result = walletCommandService.usePoint(new UseWalletCommand(request.orderId(), request.buyerId(), request.totalAmount()));
 
 		return new CommonResponse(HttpStatus.OK.value(), new UseWalletResponse(result.balance(), result.shortage()));
