@@ -1,4 +1,4 @@
-package com.trustamarket.walletservice.settlement.application.command;
+package com.trustamarket.walletservice.wallet.application.command;
 
 import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
 
