@@ -14,7 +14,7 @@ public record UseWalletCommand(
 		if (buyerId == null) {
 			throw new IllegalArgumentException("구매자 ID는 필수입니다.");
 		}
-		if (totalAmount == null || totalAmount == 0) {
+		if (totalAmount == null || totalAmount <= 0) {
 			throw new IllegalArgumentException("결제 금액은 1원 이상이어야 합니다.");
 		}
 	}

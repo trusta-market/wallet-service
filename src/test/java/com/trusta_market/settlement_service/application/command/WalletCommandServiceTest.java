@@ -2,7 +2,7 @@ package com.trusta_market.settlement_service.application.command;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -97,8 +97,8 @@ class WalletCommandServiceTest {
 
 			Wallet escrowWallet = Wallet.createSystemWallet(UUID.randomUUID());
 			// Repository(외부 의존성)만 Mock으로 동작하게 설정
-			given(walletRepository.findByUserId(buyerId)).willReturn(Optional.of(buyerWallet));
-			given(systemWalletProvider.getEscrowWallet()).willReturn(escrowWallet);
+			when(walletRepository.findByUserId(buyerId)).thenReturn(Optional.of(buyerWallet));
+			when(systemWalletProvider.getEscrowWallet()).thenReturn(escrowWallet);
 
 			// when
 			UseWalletResult result = walletCommandService.usePoint(command);
@@ -124,7 +124,7 @@ class WalletCommandServiceTest {
 			Wallet buyerWallet = Wallet.createUserWallet(buyerId);
 			buyerWallet.increase(1000L, orderId, RefType.ORDER, PointTxType.CHARGE);
 
-			given(walletRepository.findByUserId(buyerId)).willReturn(Optional.of(buyerWallet));
+			when(walletRepository.findByUserId(buyerId)).thenReturn(Optional.of(buyerWallet));
 
 			// when
 			UseWalletResult result = walletCommandService.usePoint(command);
@@ -132,6 +132,7 @@ class WalletCommandServiceTest {
 			// then
 			// 돈이 안 빠져나갔다는 보장
 			verify(pointTransactionRepository, never()).saveAll(any());
+			verify(systemWalletProvider, never()).getEscrowWallet();
 
 			assertThat(buyerWallet.checkBalance()).isEqualTo(1000L);
 			assertThat(result.shortage()).isEqualTo(4000L);
@@ -143,7 +144,7 @@ class WalletCommandServiceTest {
 			UUID buyerId = UUID.randomUUID();
 			UseWalletCommand command = new UseWalletCommand(UUID.randomUUID(), buyerId, 1000L);
 
-			given(walletRepository.findByUserId(buyerId)).willReturn(Optional.empty());
+			when(walletRepository.findByUserId(buyerId)).thenReturn(Optional.empty());
 
 			assertThatThrownBy(() -> walletCommandService.usePoint(command))
 				.isInstanceOf(WalletException.class);
