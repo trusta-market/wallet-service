@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.application.command;
 
 import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,20 +45,26 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Override
 	@Transactional(propagation = Propagation.MANDATORY) // 부모 트랜잭션(정산)에 반드시 합류하도록 설정
-	public void transferForSettlement(UUID orderId, UUID sellerId, long totalAmount, long sellerAmount, long feeAmount) {
+	public void transferForSettlement(UUID orderId, UUID sellerId, long totalAmount, long sellerAmount, long feeAmount) { // dto로 변경 예정
 
-		// 1. 지갑 조회 (지갑 도메인의 책임)
 		Wallet adminWallet = systemWalletProvider.getEscrowWallet();
 		Wallet feeWallet = systemWalletProvider.getFeeWallet();
 		Wallet sellerWallet = walletRepository.findByUserId(sellerId)
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 
-		// 2. 포인트 이동 로직 (지갑 도메인의 책임)
-		PointTransaction adminTx = adminWallet.settleOut(totalAmount, orderId);
-		PointTransaction sellerTx = sellerWallet.settleIn(sellerAmount, orderId);
-		PointTransaction feeTx = feeWallet.increaseFeeRevenue(feeAmount, orderId);
+		List<PointTransaction> transactions = new ArrayList<>();
+		transactions.add(adminWallet.settleOut(totalAmount, orderId));
 
-		// 3. DB 저장 (지갑 도메인의 책임)
-		pointTransactionRepository.saveAll(List.of(adminTx, sellerTx, feeTx));
+		if (sellerAmount > 0) {
+			transactions.add(sellerWallet.settleIn(sellerAmount, orderId));
+		}
+
+		if (feeAmount > 0) {
+			transactions.add(feeWallet.increaseFeeRevenue(feeAmount, orderId));
+		}
+
+		if (!transactions.isEmpty()) {
+			pointTransactionRepository.saveAll(transactions);
+		}
 	}
 }

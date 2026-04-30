@@ -15,24 +15,27 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(
-	name = "p_settlement_history"
-	// uniqueConstraints = { // 이름 바뀔 가능성 때문에 우선 @Column에 unique로 표시
-	// 	@UniqueConstraint(
-	// 		name = "uk_settlement_event_id",
-	// 		columnNames = {"event_id"}
-	// 	)
-	// }
+	name = "p_settlement_history",
+	uniqueConstraints = {
+		@UniqueConstraint(
+			name = SettlementHistory.UK_EVENT_ID,
+			columnNames = {"event_id"}
+		)
+	}
 )
 public class SettlementHistory {
+	public static final String UK_EVENT_ID = "uk_settlement_history_event_id";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID settlementHistoryId;
 
 	// inbox와 exactly-once 고려, orderId+status고려
-	@Column(nullable = false, unique = true)
+	@Column(nullable = false)
 	private UUID eventId;
 
 	@Column(nullable = false)
@@ -66,7 +69,6 @@ public class SettlementHistory {
 		if (eventId == null || orderId == null || sellerId == null) {
 			throw new IllegalArgumentException("정산 식별자는 필수입니다.");
 			}
-
 
 		if (appliedFeeRate != null
 			&& (appliedFeeRate.signum() < 0 || appliedFeeRate.compareTo(BigDecimal.ONE) > 0)) {

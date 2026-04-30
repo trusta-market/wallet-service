@@ -26,7 +26,7 @@ public class SettlementCommandService implements SettlementCommandUsecase {
 	public void process(SettlePointSettlementMessage message) {
 		//멱등성 고민 중 -> 우선 saveAndFlush + DataIntegrityException으로 진행하려고 했으나 unique 제약만 선별하는데 문제 발생
 		if (settlementHistoryRepository.existsByEventId(message.eventId())) {
-			//이미 table에 저장은 되었는데 ack를 못 받은거면?
+			//이미 table에 저장은 되었는데 ack를 못 받은거면 -> listener에서 확인
 			throw new SettlementException(ALREADY_SETTLED);
 		}
 

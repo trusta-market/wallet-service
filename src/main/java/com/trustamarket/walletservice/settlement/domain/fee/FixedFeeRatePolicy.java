@@ -20,7 +20,7 @@ public class FixedFeeRatePolicy implements FeeRatePolicy {
 	}
 
 	@Override
-	public BigDecimal getRate(UUID sellerId) {
+	public BigDecimal getRate(UUID sellerId) { // 추후 등급에 따른 수수료 정책 변경 고려
 		return rate;
 	}
 }
