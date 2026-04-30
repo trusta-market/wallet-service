@@ -15,11 +15,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.trustamarket.walletservice.application.command.WalletCommandServiceImpl;
-import com.trustamarket.walletservice.domain.entity.Wallet;
-import com.trustamarket.walletservice.domain.exception.WalletErrorCode;
-import com.trustamarket.walletservice.domain.exception.WalletException;
-import com.trustamarket.walletservice.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.application.command.WalletCommandServiceImpl;
+import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
+import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
+import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
 
 @ExtendWith(MockitoExtension.class)
 class WalletCommandServiceTest {
