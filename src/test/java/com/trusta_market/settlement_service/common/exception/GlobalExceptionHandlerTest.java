@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.trustamarket.common.response.ErrorResponse;
-import com.trustamarket.walletservice.common.exception.GlobalExceptionHandler;
+import com.trustamarket.walletservice.wallet.common.exception.GlobalExceptionHandler;
 
 class GlobalExceptionHandlerTest {
 
