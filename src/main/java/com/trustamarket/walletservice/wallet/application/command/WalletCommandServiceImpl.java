@@ -62,10 +62,10 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 
 		PointTransaction userTx = buyerWallet.decrease(
-			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.PAYMENT
+			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.BUYER_PAYMENT
 		);
 		PointTransaction escrowTx = systemEscrow.increase(
-			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.PAYMENT
+			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.ESCROW_DEPOSIT
 		);
 
 		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));
