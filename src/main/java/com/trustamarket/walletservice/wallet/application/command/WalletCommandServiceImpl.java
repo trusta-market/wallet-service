@@ -52,7 +52,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	public UseWalletResult usePoint(UseWalletCommand command) {
 		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
-		
+
 		long currentBalance = buyerWallet.checkBalance();
 		if (currentBalance < command.totalAmount()) {
 			long shortage = command.totalAmount() - currentBalance;
@@ -68,6 +68,8 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.ESCROW_DEPOSIT
 		);
 
+		walletRepository.save(buyerWallet);
+		walletRepository.save(systemEscrow);
 		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));
 
 		return UseWalletResult.success(buyerWallet.checkBalance());
