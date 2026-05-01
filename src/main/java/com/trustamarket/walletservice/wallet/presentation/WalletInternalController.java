@@ -46,7 +46,7 @@ public class WalletInternalController {
 	}
 
 	@PostMapping("/{userId}/charge")
-	public CommonResponse<Void> chargePoint(@PathVariable UUID userId, @RequestBody ChargedPointRequest request){
+	public CommonResponse<Void> chargePoint(@PathVariable UUID userId, @Valid @RequestBody ChargedPointRequest request){
 		walletCommandService.chargePoint(new ChargePointCommand(userId, request.paymentId(), request.chargedAmount()));
 
 		return new CommonResponse(HttpStatus.OK.value(), null);

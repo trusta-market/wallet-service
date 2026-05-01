@@ -109,5 +109,6 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		PointTransaction chargeTx = userWallet.chargePoint(command.chargedAmount(), command.paymentId());
 		walletRepository.save(userWallet);
+		pointTransactionRepository.save(chargeTx);
 	}
 }
