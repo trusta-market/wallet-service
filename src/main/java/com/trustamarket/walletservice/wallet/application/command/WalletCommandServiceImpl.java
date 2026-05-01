@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,5 +99,15 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		if (!transactions.isEmpty()) {
 			pointTransactionRepository.saveAll(transactions);
 		}
+	}
+
+	@Override
+	@Transactional
+	public void chargePoint(ChargePointCommand command) {
+		Wallet userWallet = walletRepository.findByUserId(command.userId())
+				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+
+		PointTransaction chargeTx = userWallet.chargePoint(command.chargedAmount(), command.paymentId());
+		walletRepository.save(userWallet);
 	}
 }

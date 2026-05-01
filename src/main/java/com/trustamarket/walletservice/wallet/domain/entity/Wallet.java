@@ -97,6 +97,10 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		return increase(amount, refId, RefType.ORDER, PointTxType.FEE_REVENUE);
 	}
 
+	public PointTransaction chargePoint(long amount, UUID refId) {
+		return increase(amount, refId, RefType.PAYMENT, PointTxType.CHARGE);
+	}
+
 	public PointTransaction increase(long amount, UUID refId, RefType refType, PointTxType txType) {
 		validateActive();
 		if (amount <= 0) {
