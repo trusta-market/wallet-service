@@ -9,7 +9,7 @@ import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletRes
 
 public interface WalletCommandService {
 	CreateWalletResult createWallet(UUID userId);
-	UseWalletResult usePoint(UUID userId, UseWalletCommand command);
+	UseWalletResult usePoint(UseWalletCommand command);
 	void chargePoint(ChargePointCommand command);
 
 	void transferForSettlement(UUID orderId, UUID sellerId, long totalAmount, long sellerAmount, long feeAmount);

@@ -34,9 +34,8 @@ public class WalletInternalController {
 	private final WalletCommandService walletCommandService;
 
 	@PostMapping
-	public CommonResponse<CreateWalletResponse> createWallet() { // return 타입과 파라미터 수정 필요
-		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
-		System.out.println(userId);
+	public CommonResponse<CreateWalletResponse> createWallet() {
+		UUID userId = SecurityUtil.getCurrentUserIdOrThrow(); //user-service로부터 받아오는 거로 수정 필요
 		CreateWalletResult result = walletCommandService.createWallet(userId);
 
 		return new CommonResponse<>(HttpStatus.CREATED.value(), new CreateWalletResponse(result.walletId()));
@@ -44,9 +43,8 @@ public class WalletInternalController {
 
 	@PatchMapping("/usages")
 	public CommonResponse<UseWalletResponse> usePoint (@Valid @RequestBody UseWalletRequest request) {
-		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
-		UseWalletResult result = walletCommandService.usePoint(userId, new UseWalletCommand(request.orderId(), request.buyerId(), request.totalAmount()));
-
+		UseWalletResult result = walletCommandService.usePoint(new UseWalletCommand(request.orderId(), request.buyerId(), request.totalAmount()));
+		
 		return new CommonResponse(HttpStatus.OK.value(), new UseWalletResponse(result.balance(), result.shortage()));
 	}
 

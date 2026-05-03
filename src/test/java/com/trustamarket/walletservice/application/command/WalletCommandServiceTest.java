@@ -102,7 +102,7 @@ class WalletCommandServiceTest {
 			when(systemWalletProvider.getEscrowWallet()).thenReturn(escrowWallet);
 
 			// when
-			UseWalletResult result = walletCommandService.usePoint(userId, command);
+			UseWalletResult result = walletCommandService.usePoint(command);
 
 			// then
 			// Repository의 saveAll이 정확히 1번 호출되었는지 검증
@@ -129,7 +129,7 @@ class WalletCommandServiceTest {
 			when(walletRepository.findByUserId(buyerId)).thenReturn(Optional.of(buyerWallet));
 
 			// when
-			UseWalletResult result = walletCommandService.usePoint(userId, command);
+			UseWalletResult result = walletCommandService.usePoint(command);
 
 			// then
 			// 돈이 안 빠져나갔다는 보장
@@ -149,7 +149,7 @@ class WalletCommandServiceTest {
 
 			when(walletRepository.findByUserId(buyerId)).thenReturn(Optional.empty());
 
-			assertThatThrownBy(() -> walletCommandService.usePoint(userId, command))
+			assertThatThrownBy(() -> walletCommandService.usePoint(command))
 				.isInstanceOf(WalletException.class);
 
 			verify(systemWalletProvider, never()).getEscrowWallet();

@@ -50,7 +50,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	}
 
 	@Transactional
-	public UseWalletResult usePoint(UUID userId, UseWalletCommand command) {
+	public UseWalletResult usePoint(UseWalletCommand command) {
 		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
