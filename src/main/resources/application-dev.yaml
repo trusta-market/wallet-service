@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: wallet-service
+  # Database
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/${DB_NAME}?currentSchema=${SCHEMA}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  # jpa properties
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    # 수동 커밋
+    listener:
+      ack-mode: manual
+
+    consumer:
+      group-id: wallet-settlement-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false # 수동 커밋 사용 시 필수
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: com.trustamarket.walletservice.settlement.application.dto.message.SettlePointSettlementMessage
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonDeserializer
