@@ -50,7 +50,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	}
 
 	@Transactional
-	public UseWalletResult usePoint(UseWalletCommand command) {
+	public UseWalletResult usePoint(UUID userId, UseWalletCommand command) {
 		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
@@ -86,6 +86,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 
 		List<PointTransaction> transactions = new ArrayList<>();
+		System.out.println(totalAmount);
 		transactions.add(adminWallet.settleOut(totalAmount, orderId));
 
 		if (sellerAmount > 0) {

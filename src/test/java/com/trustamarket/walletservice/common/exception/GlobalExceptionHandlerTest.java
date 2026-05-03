@@ -1,4 +1,4 @@
-package com.trusta_market.settlement_service.common.exception;
+package com.trustamarket.walletservice.common.exception;
 
 import static org.assertj.core.api.Assertions.*;
 
