@@ -1,10 +1,9 @@
 package com.trustamarket.walletservice.wallet.application.port;
 
-import com.trustamarket.common.response.CommonResponse;
-import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.PaymentPointResponse;
+import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
 
 import java.util.UUID;
 
 public interface PaymentPort {
-    PaymentPointResponse chargePoint(UUID userId, UUID paymentId, long amount);
+    ChargePointResult chargePoint(UUID userId, UUID paymentId, long amount);
 }

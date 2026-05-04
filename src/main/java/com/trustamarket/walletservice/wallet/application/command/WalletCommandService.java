@@ -15,6 +15,7 @@ public interface WalletCommandService {
 	UseWalletResult usePoint(UseWalletCommand command);
 
 	ChargePointResult chargePoint(ChargePointCommand command);
+	void chargeComplete(ChargeCompleteCommand command);
 
 	void transferForSettlement(UUID orderId, UUID sellerId, long totalAmount, long sellerAmount, long feeAmount);
 }

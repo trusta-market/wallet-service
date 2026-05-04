@@ -5,6 +5,6 @@ import java.util.UUID;
 
 public record PaymentPointResponse(
         UUID paymentId,
-        long chargedAmount,
+        long chargeAmount,
         Instant chargedAt
 ) {}

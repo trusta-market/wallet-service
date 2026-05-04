@@ -23,6 +23,6 @@ public class PaymentAdapter implements PaymentPort {
 
         PaymentPointResponse response = paymentFeignClient.paymentPoint(request);
 
-        return new ChargePointResult(response.paymentId(), response.chargedAmount(), response.chargedAt());
+        return new ChargePointResult(response.paymentId(), response.chargeAmount(), response.chargedAt());
     }
 }

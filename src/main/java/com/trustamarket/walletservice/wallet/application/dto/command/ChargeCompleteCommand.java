@@ -8,6 +8,9 @@ public record ChargeCompleteCommand (
         long chargedAmount
 ) {
     public ChargeCompleteCommand {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId는 필수입니다.");
+        }
         if (paymentId == null) {
             throw new IllegalArgumentException("paymentId는 필수입니다.");
         }

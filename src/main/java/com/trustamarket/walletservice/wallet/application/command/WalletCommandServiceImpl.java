@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
 import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
 import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
@@ -108,24 +109,16 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	@Override
 	@Transactional
 	public ChargePointResult chargePoint(ChargePointCommand command) {
+		return paymentPort.chargePoint(command.userId(), command.paymentId(), command.chargeAmount());
+	}
 
-		ChargePointResult result = paymentPort.chargePoint(command.userId(), command.paymentId(), command.chargeAmount());
-
+	@Override
+	public void chargeComplete(ChargeCompleteCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
 				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
-		// todo : 정보 불일치시 문제 해결방법
-		if(command.chargeAmount() != result.chargedAmount()){
-			throw new IllegalArgumentException("금액 불일치");
-		}
-		if(!command.paymentId().equals(result.paymentId())) {
-			throw new IllegalArgumentException("paymentId 불일치");
-		}
-
-		PointTransaction chargeTx = userWallet.chargePoint(result.chargedAmount(), result.paymentId());
+		PointTransaction chargeTx = userWallet.chargeComplete(command.chargedAmount(), command.paymentId());
 		walletRepository.save(userWallet);
 		pointTransactionRepository.save(chargeTx);
-
-		return result;
 	}
 }

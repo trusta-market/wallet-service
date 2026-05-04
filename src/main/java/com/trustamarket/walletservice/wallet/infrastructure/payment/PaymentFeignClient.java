@@ -1,6 +1,5 @@
 package com.trustamarket.walletservice.wallet.infrastructure.payment;
 
-import com.trustamarket.common.response.CommonResponse;
 import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.PaymentPointRequest;
 import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.PaymentPointResponse;
 import org.springframework.cloud.openfeign.FeignClient;
