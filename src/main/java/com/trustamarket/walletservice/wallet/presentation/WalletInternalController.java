@@ -1,31 +1,32 @@
 package com.trustamarket.walletservice.wallet.presentation;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import com.trustamarket.common.config.security.UserDetailsImpl;
+import com.trustamarket.common.response.CommonResponse;
 import com.trustamarket.common.util.SecurityUtil;
-import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
-import com.trustamarket.walletservice.wallet.presentation.dto.request.ChargedPointRequest;
+import com.trustamarket.walletservice.wallet.application.command.WalletCommandService;
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
+import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCommand;
+import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
+import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
+import com.trustamarket.walletservice.wallet.presentation.dto.request.ChargeCompleteRequest;
+import com.trustamarket.walletservice.wallet.presentation.dto.request.UseWalletRequest;
+import com.trustamarket.walletservice.wallet.presentation.dto.response.CreateWalletResponse;
+import com.trustamarket.walletservice.wallet.presentation.dto.response.UseWalletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.trustamarket.common.response.CommonResponse;
-import com.trustamarket.walletservice.wallet.application.command.WalletCommandService;
-import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCommand;
-import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
-import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
-import com.trustamarket.walletservice.wallet.presentation.dto.request.UseWalletRequest;
-import com.trustamarket.walletservice.wallet.presentation.dto.response.CreateWalletResponse;
-import com.trustamarket.walletservice.wallet.presentation.dto.response.UseWalletResponse;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,9 +50,8 @@ public class WalletInternalController {
 	}
 
 	@PostMapping("/charges")
-	public CommonResponse<Void> chargePoint(@Valid @RequestBody ChargedPointRequest request){
-		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
-		walletCommandService.chargePoint(new ChargePointCommand(userId, request.paymentId(), request.chargedAmount()));
+	public CommonResponse<Void> chargeComplete(@Valid @RequestBody ChargeCompleteRequest request){
+		walletCommandService.chargeComplete(new ChargeCompleteCommand(request.userId(), request.paymentId(), request.chargeAmount()));
 
 		return new CommonResponse(HttpStatus.OK.value(), null);
 	}

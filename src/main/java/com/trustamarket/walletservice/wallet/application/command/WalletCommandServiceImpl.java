@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
+import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
+import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	private final WalletRepository walletRepository;
 	private final SystemWalletProvider systemWalletProvider;
+	private final PaymentPort paymentPort;
 
 	private final PointTransactionRepository pointTransactionRepository;
 
@@ -102,13 +106,17 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 	}
 
-	@Override
 	@Transactional
-	public void chargePoint(ChargePointCommand command) {
+	public ChargePointResult chargePoint(ChargePointCommand command) {
+		return paymentPort.chargePoint(command.userId(), command.paymentId(), command.chargeAmount());
+	}
+
+	@Transactional
+	public void chargeComplete(ChargeCompleteCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
 				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
-		PointTransaction chargeTx = userWallet.chargePoint(command.chargedAmount(), command.paymentId());
+		PointTransaction chargeTx = userWallet.chargeComplete(command.chargedAmount(), command.paymentId());
 		walletRepository.save(userWallet);
 		pointTransactionRepository.save(chargeTx);
 	}

@@ -5,7 +5,9 @@ import jakarta.validation.constraints.Positive;
 
 import java.util.UUID;
 
-public record ChargedPointRequest (
-    @NotNull UUID paymentId,
-    @Positive long chargedAmount
-) {}
+public record ChargeCompleteRequest(
+        @NotNull UUID userId,
+        @NotNull UUID paymentId,
+        @Positive long chargeAmount
+) {
+}
