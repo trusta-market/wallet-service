@@ -60,7 +60,6 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		return wallet;
 	}
 
-	//MVP 이후 wallet생성에서 system wallet 생성도 수정 예정
 	public static Wallet createSystemWallet(UUID userId) {
 		if (userId == null) {
 			throw new IllegalArgumentException("userId는 필수입니다");

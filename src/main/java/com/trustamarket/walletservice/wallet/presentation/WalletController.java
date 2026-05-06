@@ -2,14 +2,21 @@ package com.trustamarket.walletservice.wallet.presentation;
 
 import com.trustamarket.common.response.CommonResponse;
 import com.trustamarket.common.util.SecurityUtil;
+import com.trustamarket.walletservice.wallet.application.command.SystemWalletCommandService;
 import com.trustamarket.walletservice.wallet.application.command.WalletCommandService;
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
+import com.trustamarket.walletservice.wallet.application.dto.creator.CreateSystemWalletDto;
 import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
+import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.ChargePointRequest;
+import com.trustamarket.walletservice.wallet.presentation.dto.request.CreateSystemWalletRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.response.ChargePointResponse;
+import com.trustamarket.walletservice.wallet.presentation.dto.response.CreateWalletResponse;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +29,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/wallets")
 public class WalletController {
 	private final WalletCommandService walletCommandService;
+	private final SystemWalletCommandService systemWalletService;
 
 	@PostMapping("/charges")
 	public CommonResponse<ChargePointResponse> chargePoint(@Valid @RequestBody ChargePointRequest request){
@@ -34,5 +42,15 @@ public class WalletController {
 		ChargePointResponse response = ChargePointResponse.from(result);
 
 		return new CommonResponse(HttpStatus.OK.value(), response);
+	}
+
+	@PreAuthorize("hasRole('ADMIN')")
+	@PostMapping("/system")
+	public CommonResponse<CreateWalletResponse> createSystemWallet(@RequestBody CreateSystemWalletRequest request) {
+		Wallet result = systemWalletService.createSystemWallet(
+			CreateSystemWalletDto.of(request.operatorId(), request.walletType())
+		);
+
+		return new CommonResponse<>(HttpStatus.CREATED.value(), CreateWalletResponse.from(result));
 	}
 }
