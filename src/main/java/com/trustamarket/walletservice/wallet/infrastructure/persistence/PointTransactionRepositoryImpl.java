@@ -1,5 +1,6 @@
 package com.trustamarket.walletservice.wallet.infrastructure.persistence;
 
+import java.awt.*;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
@@ -18,5 +19,10 @@ public class PointTransactionRepositoryImpl implements PointTransactionRepositor
 	@Override
 	public List<PointTransaction> saveAll(List<PointTransaction> pointTransaction) {
 		return pointTransactionRepository.saveAll(pointTransaction);
+	}
+
+	@Override
+	public PointTransaction save(PointTransaction chargeTx) {
+		return pointTransactionRepository.save(chargeTx);
 	}
 }

@@ -1,4 +1,4 @@
-package com.trusta_market.settlement_service.application.command;
+package com.trustamarket.walletservice.application.command;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -87,6 +87,7 @@ class WalletCommandServiceTest {
 		@DisplayName("잔액이 충분 -> 정상적으로 차감/적립")
 		void usePoint_Success() {
 			// given
+			UUID userId = UUID.randomUUID();
 			UUID buyerId = UUID.randomUUID();
 			UUID orderId = UUID.randomUUID();
 			long totalAmount = 1000L;
@@ -116,6 +117,7 @@ class WalletCommandServiceTest {
 		@DisplayName("지갑 잔액이 부족하면 결제가 진행되지 않고 부족한 금액(shortage)을 반환한다.")
 		void usePoint_InsufficientBalance() {
 			// given
+			UUID userId = UUID.randomUUID();
 			UUID buyerId = UUID.randomUUID();
 			UUID orderId = UUID.randomUUID();
 			long totalAmount = 5000L; // 결제 시도 금액: 5000원
@@ -141,6 +143,7 @@ class WalletCommandServiceTest {
 		@Test
 		@DisplayName("사용자의 지갑이 존재하지 않으면 WalletException을 던진다.")
 		void usePoint_WalletNotFound() {
+			UUID userId = UUID.randomUUID();
 			UUID buyerId = UUID.randomUUID();
 			UseWalletCommand command = new UseWalletCommand(UUID.randomUUID(), buyerId, 1000L);
 

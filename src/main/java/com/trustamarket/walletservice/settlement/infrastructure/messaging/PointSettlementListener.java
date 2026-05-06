@@ -29,7 +29,7 @@ public class PointSettlementListener {
 	)
 	public void handle(
 		@Payload SettlePointSettlementMessage message,
-		@Header("message_id") String messageId,
+		@Header(value = "message_id", required = false) String messageId,
 		Acknowledgment ack) {
 		log.info("정산 요청 수신: eventId={}, orderId={}",
 			message.eventId(), message.orderId());

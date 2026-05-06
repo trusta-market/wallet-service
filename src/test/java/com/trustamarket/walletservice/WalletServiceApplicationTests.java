@@ -1,10 +1,10 @@
-package com.trusta_market.settlement_service;
+package com.trustamarket.walletservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SettlementServiceApplicationTests {
+class WalletServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

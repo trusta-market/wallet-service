@@ -97,7 +97,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		return increase(amount, refId, RefType.ORDER, PointTxType.FEE_REVENUE);
 	}
 
-	public PointTransaction chargePoint(long amount, UUID refId) {
+	public PointTransaction chargeComplete(long amount, UUID refId) {
 		return increase(amount, refId, RefType.PAYMENT, PointTxType.CHARGE);
 	}
 
