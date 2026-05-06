@@ -106,13 +106,12 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 	}
 
-	@Override
 	@Transactional
 	public ChargePointResult chargePoint(ChargePointCommand command) {
 		return paymentPort.chargePoint(command.userId(), command.paymentId(), command.chargeAmount());
 	}
 
-	@Override
+	@Transactional
 	public void chargeComplete(ChargeCompleteCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
 				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));

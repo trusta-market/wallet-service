@@ -39,3 +39,4 @@ out/
 .env
 src/main/resources/application-local.yaml
 gradle.properties
+.DS_Store

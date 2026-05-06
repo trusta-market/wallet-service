@@ -21,8 +21,8 @@ public class PaymentAdapter implements PaymentPort {
     public ChargePointResult chargePoint(UUID userId, UUID paymentId, long chargeAmount) {
         PaymentPointRequest request = new PaymentPointRequest(userId, paymentId, chargeAmount);
 
-        PaymentPointResponse response = paymentFeignClient.paymentPoint(request);
+        CommonResponse<PaymentPointResponse> response = paymentFeignClient.paymentPoint(request);
 
-        return new ChargePointResult(response.paymentId(), response.chargeAmount(), response.chargedAt());
+        return new ChargePointResult(response.data().paymentId(), response.data().chargeAmount(), response.data().chargedAt());
     }
 }

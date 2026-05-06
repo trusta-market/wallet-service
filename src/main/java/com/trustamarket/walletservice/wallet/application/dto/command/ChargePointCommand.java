@@ -11,6 +11,9 @@ public record ChargePointCommand (
         if (userId == null) {
             throw new IllegalArgumentException("userId 값은 필수입니다.");
         }
+        if (paymentId == null) {
+            throw new IllegalArgumentException("paymentId 값은 필수입니다.");
+        }
         if (chargeAmount <= 0) {
             throw new IllegalArgumentException("충전 금액은 1원 이상이어야 합니다.");
         }
