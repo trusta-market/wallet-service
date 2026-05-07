@@ -16,16 +16,17 @@ public record GetPointTransactionPageResult(
 	UUID nextCursorId
 ) {
 	public static GetPointTransactionPageResult from(Slice<PointTransaction> slice) {
-		List<GetPointTransactionResponse> content = slice.getContent().stream()
+		List<PointTransaction> txContent = slice.getContent();
+
+		List<GetPointTransactionResponse> content = txContent.stream()
 			.map(GetPointTransactionResponse::from)
 			.toList();
 
 		Instant nextCursorTime = null;
 		UUID nextCursorId = null;
-
-		if (slice.hasNext() && !slice.getContent().isEmpty()) {
-			PointTransaction last = slice.getContent()
-				.get(slice.getContent().size() - 1);
+		
+		if (slice.hasNext() && !txContent.isEmpty()) {
+			PointTransaction last = txContent.getLast();
 			nextCursorTime = last.getCreatedAt();
 			nextCursorId = last.getPointTransactionId();
 		}
@@ -45,7 +46,7 @@ public record GetPointTransactionPageResult(
 		public static GetPointTransactionResponse from(PointTransaction pointTransaction) {
 			return new GetPointTransactionResponse(
 				pointTransaction.getPointTransactionId(),
-				pointTransaction.getUsePoint(),
+				pointTransaction.getChangeAmount(),
 				pointTransaction.getPointTxType(),
 				pointTransaction.getCreatedAt()
 			);

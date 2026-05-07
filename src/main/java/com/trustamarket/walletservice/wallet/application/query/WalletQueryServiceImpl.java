@@ -26,6 +26,8 @@ public class WalletQueryServiceImpl implements WalletQueryService{
 	private final WalletRepository walletRepository;
 	private final PointTransactionRepository pointTransactionRepository;
 
+	private static final int DEFAULT_PAGE_SIZE = 20;
+
 	@Transactional(readOnly = true)
 	public long getPoint(UUID userId) {
 		Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(
@@ -44,11 +46,11 @@ public class WalletQueryServiceImpl implements WalletQueryService{
 		Instant cursorTime = query.cursorTime();
 		Instant to = query.to();
 		Instant from = query.from();
-		int size = query.size();
+		int size = query.size() != null ? query.size() : DEFAULT_PAGE_SIZE;
 
 		Slice<PointTransaction> pointTransactions;
 
-		if (cursorId == null) {
+		if (cursorId == null || cursorTime == null) {
 			pointTransactions = pointTransactionRepository.findFirstPointTransactions(
 				walletId, from, to, Pageable.ofSize(size)
 			);

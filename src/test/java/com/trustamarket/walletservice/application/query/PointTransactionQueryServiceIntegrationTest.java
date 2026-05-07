@@ -1,7 +1,6 @@
 package com.trustamarket.walletservice.application.query;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
+import static org.assertj.core.api.Assertions.*;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -10,7 +9,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -26,7 +24,7 @@ import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
 
 import jakarta.persistence.EntityManager;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 @Transactional
 class PointTransactionQueryServiceIntegrationTest {
@@ -76,8 +74,9 @@ class PointTransactionQueryServiceIntegrationTest {
 			);
 
 			for (var tx : page.content()) {
-				assertThat(seen).doesNotContain(tx.pointTxId())
-					.as("페이지 간 중복 발생: " + tx.pointTxId());
+				assertThat(seen)
+					.as("페이지 간 중복 발생: " + tx.pointTxId())
+					.doesNotContain(tx.pointTxId());
 				seen.add(tx.pointTxId());
 			}
 

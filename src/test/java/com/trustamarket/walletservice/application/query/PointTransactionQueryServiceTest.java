@@ -5,10 +5,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -131,7 +129,7 @@ class PointTransactionQueryServiceTest {
 		PointTransaction tx = mock(PointTransaction.class);
 		when(tx.getPointTransactionId()).thenReturn(id);
 		when(tx.getCreatedAt()).thenReturn(createdAt);
-		when(tx.getUsePoint()).thenReturn(amount);
+		when(tx.getChangeAmount()).thenReturn(amount);
 		when(tx.getPointTxType()).thenReturn(pointTxType);
 		return tx;
 	}

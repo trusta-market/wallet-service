@@ -1,10 +1,8 @@
 package com.trustamarket.walletservice.wallet.domain.entity;
 
-import java.time.Instant;
 import java.util.UUID;
 
 import com.trustamarket.common.domain.BaseCreatedEntity;
-import com.trustamarket.common.domain.BaseTimeEntity;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 
@@ -81,7 +79,7 @@ public class PointTransaction extends BaseCreatedEntity {
 		}
 	}
 
-	public long getUsePoint() {
+	public long getChangeAmount() {
 		return this.balanceChange.amount();
 	}
 }
