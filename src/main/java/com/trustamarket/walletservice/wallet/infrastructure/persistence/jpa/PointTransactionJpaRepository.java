@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 
@@ -19,7 +20,10 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
 		ORDER BY t.createdAt DESC, t.pointTransactionId DESC
 	""")
 	Slice<PointTransaction> findFirstPointTransactions(
-		UUID walletId, Instant from, Instant to, Pageable pageable
+		@Param("walletId") UUID walletId,
+		@Param("from") Instant from,
+		@Param("to") Instant to,
+		Pageable pageable
 	);
 
 	@Query("""
@@ -32,7 +36,11 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
 		ORDER BY t.createdAt DESC, t.pointTransactionId DESC
 	""")
 	Slice<PointTransaction> findNextPointTransactions(
-		UUID walletId, Instant from, Instant to,
-		Instant cursorTime, UUID cursorId, Pageable pageable
+		@Param("walletId") UUID walletId,
+		@Param("from") Instant from,
+		@Param("to") Instant to,
+		@Param("cursorTime") Instant cursorTime,
+		@Param("cursorId") UUID cursorId,
+		Pageable pageable
 	);
 }

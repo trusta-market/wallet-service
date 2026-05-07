@@ -63,14 +63,14 @@ public class WalletController {
 				queryRequest.cursorTime(), queryRequest.cursorId(),
 				queryRequest.size())
 		);
-		return new CommonResponse(HttpStatus.OK.value(), result);
+		return new CommonResponse<>(HttpStatus.OK.value(), result);
 	}
 
 	@GetMapping("/balances")
 	public CommonResponse<Long> getPointBalance() {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		long balance = walletQueryService.getPoint(userId);
-		return new CommonResponse(HttpStatus.OK.value(), balance);
+		return new CommonResponse<>(HttpStatus.OK.value(), balance);
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
