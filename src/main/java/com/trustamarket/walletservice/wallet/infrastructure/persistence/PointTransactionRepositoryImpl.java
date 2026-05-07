@@ -1,8 +1,13 @@
 package com.trustamarket.walletservice.wallet.infrastructure.persistence;
 
 import java.awt.*;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
@@ -24,5 +29,17 @@ public class PointTransactionRepositoryImpl implements PointTransactionRepositor
 	@Override
 	public PointTransaction save(PointTransaction chargeTx) {
 		return pointTransactionRepository.save(chargeTx);
+	}
+
+	@Override
+	public Slice<PointTransaction> findFirstPointTransactions(UUID walletId, Instant from, Instant to, Pageable pageable) {
+		return  pointTransactionRepository.findFirstPointTransactions(walletId, from, to, pageable);
+	}
+
+	@Override
+	public Slice<PointTransaction> findNextPointTransactions(
+		UUID walletId, Instant from, Instant to,
+		Instant cursorTime, UUID cursorId, Pageable pageable) {
+		return  pointTransactionRepository.findNextPointTransactions(walletId, from, to, cursorTime, cursorId, pageable);
 	}
 }

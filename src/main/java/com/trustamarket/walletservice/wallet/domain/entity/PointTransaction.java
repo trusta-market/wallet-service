@@ -3,6 +3,8 @@ package com.trustamarket.walletservice.wallet.domain.entity;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.trustamarket.common.domain.BaseCreatedEntity;
+import com.trustamarket.common.domain.BaseTimeEntity;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 
@@ -19,14 +21,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "p_point_transactions")
 @Entity
-public class PointTransaction {
+public class PointTransaction extends BaseCreatedEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
+	@Getter
 	private UUID pointTransactionId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -39,11 +43,10 @@ public class PointTransaction {
 	@Embedded
 	private BalanceChange balanceChange;
 
+	@Getter
 	@Enumerated(EnumType.STRING)
 	@Column(name = "tx_type", nullable = false)
 	private PointTxType pointTxType;
-
-	private Instant createdAt;
 
 	public static PointTransaction create(
 		Wallet wallet,
@@ -78,4 +81,7 @@ public class PointTransaction {
 		}
 	}
 
+	public long getUsePoint() {
+		return this.balanceChange.amount();
+	}
 }
