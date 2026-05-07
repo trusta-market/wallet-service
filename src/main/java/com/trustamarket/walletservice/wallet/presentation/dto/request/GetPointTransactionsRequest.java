@@ -18,12 +18,13 @@ public record GetPointTransactionsRequest(
 ) {
 	public GetPointTransactionsRequest {
 		if (size == null) size = 20;
-		if (!from.isAfter(to)) {
-			throw new IllegalArgumentException("to가 더 최근이여야 함");
-		}
+
 		to = getValidTo();
 		from = getValidFrom();
 
+		if (!from.isAfter(to)) {
+			throw new IllegalArgumentException("to가 더 최근이여야 함");
+		}
 		if(!isValidCursor()) {
 			throw new IllegalArgumentException("cursor가 맞지 않음");
 		}
