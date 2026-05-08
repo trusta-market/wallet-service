@@ -23,6 +23,7 @@ import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
@@ -141,6 +142,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	}
 
 	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
+		UUID requestedHistoryId = command.pointTxHistoryId();
+		// 클라이언트 키 충돌 시 에러
+		if (requestedHistoryId != null && isExistPointTxRequestHistory(requestedHistoryId)) {
+			throw new WalletException(ALREADY_EXISTS_POINT_TX_REQUEST);
+		}
 		UUID historyId = withdrawPointRequest(command);
 
 		paymentPort.withdrawPoint(
@@ -148,6 +154,9 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		);
 
 		return new WithdrawPointResult(historyId);
+	}
+	private boolean isExistPointTxRequestHistory(UUID requestedHistoryId){
+		return pointTxRequestHistoryRepository.existsById(requestedHistoryId);
 	}
 
 	@Transactional
@@ -162,16 +171,17 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
 				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
 
-		long requestedAmount = pointTxRequestHistory.getRequestPoint();
-		PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
+		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
+			pointTxRequestHistory.success();
+			long requestedAmount = pointTxRequestHistory.getRequestPoint();
+			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
 
-		walletRepository.save(userWallet);
-		pointTransactionRepository.save(withdrawTx);
+			walletRepository.save(userWallet);
+			pointTransactionRepository.save(withdrawTx);
+		} else {
+			pointTxRequestHistory.fail();
+		}
 
-		//fail 처리 todo
-		pointTxRequestHistory.success();
 		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
-
-		// return new WithdrawPointResult(pointTxRequestHistory.getPointTxRequestHistoryId());
 	}
 }

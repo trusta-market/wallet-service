@@ -12,11 +12,11 @@ public enum WalletErrorCode implements ErrorCodeSpec {
 	// WALLET_3XX → 조회 실패 (NOT_FOUND)
 	WALLET_NOT_FOUND("WALLET_301", HttpStatus.NOT_FOUND, "지갑을 찾을 수 없습니다.", "userId"),
 	WALLET_NOT_FOUND_BY_TYPE("WALLET_302", HttpStatus.NOT_FOUND, "해당 타입의 지갑을 찾을 수 없습니다.", "walletType"),
-	WALLET_POINT_TX_REQUEST_NOT_FOUND("WALLET_303", HttpStatus.NOT_FOUND, "해당 요청 기록을 찾을 수 없습니다.", "pointTxRequestHistory"),
+	WALLET_POINT_TX_REQUEST_NOT_FOUND("WALLET_303", HttpStatus.NOT_FOUND, "해당 요청 기록을 찾을 수 없습니다.", "pointTxRequestHistoryId"),
 
 	//WALLET_4XX → 생성/중복 관련 (EXISTS)
-	ALREADY_EXISTS_WALLET("WALLET_401", HttpStatus.CONFLICT, "이미 지갑이 존재하는 사용자입니다.", "userId");
-
+	ALREADY_EXISTS_WALLET("WALLET_401", HttpStatus.CONFLICT, "이미 지갑이 존재하는 사용자입니다.", "userId"),
+	ALREADY_EXISTS_POINT_TX_REQUEST("WALLET_402", HttpStatus.CONFLICT, "해당 요청 기록이 이미 있습니다.", "pointTxRequestHistoryId");
 	// WALLET_5XX → 시스템 에러
 
 	private final String code;

@@ -14,6 +14,7 @@ import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCo
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
+import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.ChargeCompleteRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.CreateWalletRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.UseWalletRequest;
@@ -57,6 +58,7 @@ public class WalletInternalController {
 			request.userId(),
 			request.paymentId(),
 			request.pointTxHistoryId(),
+			PointRequestStatus.from(request.payoutStatus()),
 			request.withdrawAmount()
 		));
 		return new CommonResponse<>(HttpStatus.NO_CONTENT.value(), null);

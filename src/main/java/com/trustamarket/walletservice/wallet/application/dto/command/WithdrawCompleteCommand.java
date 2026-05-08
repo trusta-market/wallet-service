@@ -2,10 +2,13 @@ package com.trustamarket.walletservice.wallet.application.dto.command;
 
 import java.util.UUID;
 
+import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
+
 public record WithdrawCompleteCommand(
         UUID userId,
         UUID paymentId,
         UUID pointTxRequestHistoryId,
+        PointRequestStatus requestResultStatus,
         long withdrawAmount
 ) {
     public WithdrawCompleteCommand {
@@ -20,7 +23,8 @@ public record WithdrawCompleteCommand(
         }
     }
 
-    public static WithdrawCompleteCommand of(UUID userId, UUID paymentId, UUID pointTxRequestHistoryId, long withdrawAmount) {
-        return new WithdrawCompleteCommand(userId, paymentId, pointTxRequestHistoryId, withdrawAmount);
+    public static WithdrawCompleteCommand of(UUID userId, UUID paymentId, UUID pointTxRequestHistoryId,
+        PointRequestStatus requestResultStatus, long withdrawAmount) {
+        return new WithdrawCompleteCommand(userId, paymentId, pointTxRequestHistoryId, requestResultStatus, withdrawAmount);
     }
 }

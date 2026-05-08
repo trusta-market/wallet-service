@@ -4,6 +4,7 @@ import java.util.UUID;
 
 public record WithdrawPointCommand(
     UUID userId,
+    UUID pointTxHistoryId,
     long withdrawAmount
 ) {
     public WithdrawPointCommand {
@@ -15,7 +16,7 @@ public record WithdrawPointCommand(
         }
     }
 
-    public static WithdrawPointCommand of(UUID userId, long withdrawAmount) {
-        return new WithdrawPointCommand(userId, withdrawAmount);
+    public static WithdrawPointCommand of(UUID userId, UUID pointTxHistoryId, long withdrawAmount) {
+        return new WithdrawPointCommand(userId, pointTxHistoryId, withdrawAmount);
     }
 }

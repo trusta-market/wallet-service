@@ -8,4 +8,5 @@ import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionReque
 public interface PointTransactionRequestHistoryRepository {
 	PointTransactionRequestHistory save(PointTransactionRequestHistory chargeTx);
 	Optional<PointTransactionRequestHistory> findById(UUID pointTxHistoryId);
+	boolean existsById(UUID pointTxHistoryId);
 }

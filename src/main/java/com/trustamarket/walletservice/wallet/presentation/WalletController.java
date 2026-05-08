@@ -52,7 +52,9 @@ public class WalletController {
 	@PostMapping("/withdrawals")
 	public CommonResponse<WithdrawPointResponse> withdrawRequest(@RequestBody WithdrawPointRequest request) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
-		WithdrawPointResult result = walletCommandService.withdrawPoint(WithdrawPointCommand.of(userId, request.withdrawAmount()));
+		WithdrawPointResult result = walletCommandService.withdrawPoint(
+			WithdrawPointCommand.of(userId, request.pointTxRequestHistoryId(), request.withdrawAmount())
+		);
 		return new CommonResponse<>(HttpStatus.FOUND.value(), WithdrawPointResponse.from(result)); //PRG + body 비우기
 	}
 

@@ -9,9 +9,16 @@ public record WithdrawCompleteRequest(
         @NotNull UUID userId,
 		@NotNull UUID paymentId,
         @NotNull UUID pointTxHistoryId,
+		@NotNull String payoutStatus,
         @Positive long withdrawAmount
 ) {
-	public static WithdrawCompleteRequest of(UUID userId, UUID paymentId, UUID pointTxHistoryId, long withdrawAmount) {
-		return new WithdrawCompleteRequest(userId, paymentId, pointTxHistoryId, withdrawAmount);
+	public static WithdrawCompleteRequest of(
+		UUID userId,
+		UUID paymentId,
+		UUID pointTxHistoryId,
+		String payoutStatus,
+		long withdrawAmount
+	) {
+		return new WithdrawCompleteRequest(userId, paymentId, pointTxHistoryId, payoutStatus, withdrawAmount);
 	}
 }

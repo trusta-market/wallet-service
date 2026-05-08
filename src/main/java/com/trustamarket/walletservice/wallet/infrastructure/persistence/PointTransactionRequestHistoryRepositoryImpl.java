@@ -25,4 +25,9 @@ public class PointTransactionRequestHistoryRepositoryImpl implements PointTransa
 	public Optional<PointTransactionRequestHistory> findById(UUID pointTxHistoryId) {
 		return pointTransactionRequestHistoryRepository.findById(pointTxHistoryId);
 	}
+
+	@Override
+	public boolean existsById(UUID pointTxHistoryId) {
+		return pointTransactionRequestHistoryRepository.existsById(pointTxHistoryId);
+	}
 }
