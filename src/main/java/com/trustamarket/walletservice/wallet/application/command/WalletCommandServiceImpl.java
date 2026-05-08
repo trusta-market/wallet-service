@@ -6,24 +6,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
-import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
-import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
-import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCommand;
+import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawCompleteCommand;
+import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawPointCommand;
+import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
+import com.trustamarket.walletservice.wallet.application.dto.result.WithdrawPointResult;
+import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
+import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +42,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	private final PaymentPort paymentPort;
 
 	private final PointTransactionRepository pointTransactionRepository;
+	private final PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
 
 	@Transactional
 	public CreateWalletResult createWallet(UUID userId) {
@@ -119,5 +125,53 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		PointTransaction chargeTx = userWallet.chargeComplete(command.chargedAmount(), command.paymentId());
 		walletRepository.save(userWallet);
 		pointTransactionRepository.save(chargeTx);
+	}
+
+
+	@Transactional // find와 save간의 transaction
+	protected UUID withdrawPointRequest(WithdrawPointCommand command) {
+		Wallet userWallet = walletRepository.findByUserId(command.userId())
+			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+
+		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
+			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount())
+		);
+
+		return pointTxRequestHistory.getPointTxRequestHistoryId();
+	}
+
+	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
+		UUID historyId = withdrawPointRequest(command);
+
+		paymentPort.withdrawPoint(
+			command.userId(), historyId, command.withdrawAmount()
+		);
+
+		return new WithdrawPointResult(historyId);
+	}
+
+	@Transactional
+	public void withdrawComplete(WithdrawCompleteCommand command) {
+		Wallet userWallet = walletRepository.findByUserId(command.userId())
+			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
+
+		long withdrawAmount = command.withdrawAmount();
+		UUID refId = command.paymentId();
+
+		PointTransactionRequestHistory pointTxRequestHistory =
+			pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
+				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
+
+		long requestedAmount = pointTxRequestHistory.getRequestPoint();
+		PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
+
+		walletRepository.save(userWallet);
+		pointTransactionRepository.save(withdrawTx);
+
+		//fail 처리 todo
+		pointTxRequestHistory.success();
+		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
+
+		// return new WithdrawPointResult(pointTxRequestHistory.getPointTxRequestHistoryId());
 	}
 }

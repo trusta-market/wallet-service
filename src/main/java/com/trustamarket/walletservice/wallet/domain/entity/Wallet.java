@@ -100,6 +100,14 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		return increase(amount, refId, RefType.PAYMENT, PointTxType.CHARGE);
 	}
 
+	public PointTransaction withdraw(long requestedAmount, long withdrawAmount, UUID refId) {
+		if (withdrawAmount != requestedAmount) {
+			throw new IllegalArgumentException("출금된 금액과 요청한 포인트가 다릅니다");
+		}
+
+		return decrease(withdrawAmount, refId, RefType.PAYMENT, PointTxType.WITHDRAW);
+	}
+
 	public PointTransaction increase(long amount, UUID refId, RefType refType, PointTxType txType) {
 		validateActive();
 		if (amount <= 0) {
