@@ -45,6 +45,8 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	private final PointTransactionRepository pointTransactionRepository;
 	private final PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
 
+	private final PointTxRequestService pointTxRequestService;
+
 	@Transactional
 	public CreateWalletResult createWallet(UUID userId) {
 		if (userId == null) {
@@ -128,26 +130,13 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		pointTransactionRepository.save(chargeTx);
 	}
 
-
-	@Transactional // find와 save간의 transaction
-	protected UUID withdrawPointRequest(WithdrawPointCommand command) {
-		Wallet userWallet = walletRepository.findByUserId(command.userId())
-			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
-
-		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
-			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount())
-		);
-
-		return pointTxRequestHistory.getPointTxRequestHistoryId();
-	}
-
 	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
 		UUID requestedHistoryId = command.pointTxHistoryId();
 		// 클라이언트 키 충돌 시 에러
 		if (requestedHistoryId != null && isExistPointTxRequestHistory(requestedHistoryId)) {
 			throw new WalletException(ALREADY_EXISTS_POINT_TX_REQUEST);
 		}
-		UUID historyId = withdrawPointRequest(command);
+		UUID historyId = pointTxRequestService.withdrawPointRequest(command);
 
 		paymentPort.withdrawPoint(
 			command.userId(), historyId, command.withdrawAmount()
