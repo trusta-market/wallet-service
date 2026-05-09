@@ -1,9 +1,12 @@
 package com.trustamarket.walletservice.wallet.domain.entity;
 
+import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
+
 import java.util.UUID;
 
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
+import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -61,10 +64,16 @@ public class PointTransactionRequestHistory {
 	}
 
 	public void success() {
+		if (this.status != PointRequestStatus.REQUESTED) {
+			throw new WalletException(INVALID_STATUS_TRANSITION);
+		}
 		this.status = PointRequestStatus.SUCCESS;
 	}
 
 	public void fail() {
+		if (this.status != PointRequestStatus.REQUESTED) {
+			throw new WalletException(INVALID_STATUS_TRANSITION);
+		}
 		this.status = PointRequestStatus.FAILED;
 	}
 }
