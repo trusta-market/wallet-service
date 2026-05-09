@@ -4,14 +4,14 @@ import java.util.UUID;
 
 public record WithdrawRequest(
         UUID userId,
-        UUID pointTxRequestHitoryId,
+        UUID pointTxRequestHistoryId,
         long withdrawAmount
 ) {
     public WithdrawRequest {
         if (userId == null) {
             throw new IllegalArgumentException("userId는 필수입니다.");
         }
-        if (pointTxRequestHitoryId == null) {
+        if (pointTxRequestHistoryId == null) {
             throw new IllegalArgumentException("pointTxRequestHitoryId는 필수입니다.");
         }
         if (withdrawAmount < 0) {

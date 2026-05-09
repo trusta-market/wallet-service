@@ -6,5 +6,5 @@ import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointR
 
 public interface PaymentPort {
     ChargePointResult chargePoint(UUID userId, UUID paymentId, long amount);
-    void withdrawPoint(UUID userId, UUID pointTxRequestHitoryId, long withdrawAmount);
+    void withdrawPoint(UUID userId, UUID pointTxRequestHistoryId, long withdrawAmount);
 }
