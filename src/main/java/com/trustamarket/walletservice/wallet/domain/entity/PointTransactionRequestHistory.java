@@ -41,7 +41,7 @@ public class PointTransactionRequestHistory {
 	private PointRequestStatus status;
 
 	@Getter
-	private Long requestPoint;
+	private long requestPoint;
 
 	public static PointTransactionRequestHistory payoutRequest(
 		Wallet wallet,
@@ -49,6 +49,9 @@ public class PointTransactionRequestHistory {
 	) {
 		if (wallet == null) {
 			throw new IllegalArgumentException("지갑은 필수");
+		}
+		if (requestPoint <= 0) {
+			throw new IllegalArgumentException("출금 금액은 1원 이상이어야 합니다.");
 		}
 		if (wallet.checkBalance() < requestPoint) {
 			throw new IllegalArgumentException("출금 불가능");

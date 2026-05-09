@@ -18,6 +18,9 @@ public record WithdrawCompleteCommand(
         if (pointTxRequestHistoryId == null) {
             throw new IllegalArgumentException("pointTxRequestHistoryId 필수입니다.");
         }
+        if (requestResultStatus == null) {
+            throw new IllegalArgumentException("결제 결과 상태는 필수입니다.");
+        }
         if (withdrawAmount <= 0) {
             throw new IllegalArgumentException("출금 금액은 1원 이상이어야 합니다.");
         }

@@ -50,17 +50,17 @@ public class WalletController {
 	}
 
 	@PostMapping("/withdrawals")
-	public CommonResponse<WithdrawPointResponse> withdrawRequest(@RequestBody WithdrawPointRequest request) {
+	public CommonResponse<WithdrawPointResponse> withdrawRequest(@Valid @RequestBody WithdrawPointRequest request) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		WithdrawPointResult result = walletCommandService.withdrawPoint(
 			WithdrawPointCommand.of(userId, request.pointTxRequestHistoryId(), request.withdrawAmount())
 		);
-		return new CommonResponse<>(HttpStatus.FOUND.value(), WithdrawPointResponse.from(result)); //PRG + body 비우기
+		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result)); //PRG + body 비우기
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/system")
-	public CommonResponse<CreateWalletResponse> createSystemWallet(@RequestBody CreateSystemWalletRequest request) {
+	public CommonResponse<CreateWalletResponse> createSystemWallet(@Valid @RequestBody CreateSystemWalletRequest request) {
 		Wallet result = systemWalletService.createSystemWallet(
 			CreateSystemWalletDto.of(request.operatorId(), request.walletType())
 		);
