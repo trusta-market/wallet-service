@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.trustamarket.walletservice.wallet.application.command.PointTxRequestService;
 import com.trustamarket.walletservice.wallet.application.command.WalletCommandServiceImpl;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawPointCommand;
@@ -36,6 +37,7 @@ class WalletCommandWithdrawServiceTest {
 	@Mock private PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
 	@Mock private PointTransactionRepository pointTransactionRepository;
 	@Mock private PaymentPort paymentPort;
+	@Mock private PointTxRequestService pointTxRequestService;
 
 	@InjectMocks
 	private WalletCommandServiceImpl walletWithdrawService;
@@ -58,21 +60,16 @@ class WalletCommandWithdrawServiceTest {
 		// given
 		long amount = 10000L;
 		UUID savedHistoryId = UUID.randomUUID();
-		PointTransactionRequestHistory savedHistory = mock(PointTransactionRequestHistory.class);
-		given(savedHistory.getPointTxRequestHistoryId()).willReturn(savedHistoryId);
 
-		given(walletRepository.findByUserId(userId)).willReturn(Optional.of(wallet));
-		given(pointTxRequestHistoryRepository.save(any(PointTransactionRequestHistory.class)))
-			.willReturn(savedHistory);
-
-		WithdrawPointCommand command = new WithdrawPointCommand(userId, null, amount );
+		WithdrawPointCommand command = new WithdrawPointCommand(userId, null, amount);
+		given(pointTxRequestService.withdrawPointRequest(command)).willReturn(savedHistoryId);
 
 		// when
 		WithdrawPointResult result = walletWithdrawService.withdrawPoint(command);
 
 		// then
 		assertThat(result.pointTxRequestHistoryId()).isEqualTo(savedHistoryId);
-		verify(pointTxRequestHistoryRepository).save(any(PointTransactionRequestHistory.class));
+		verify(pointTxRequestService).withdrawPointRequest(command);
 		verify(paymentPort).withdrawPoint(userId, savedHistoryId, amount);
 	}
 
@@ -92,6 +89,8 @@ class WalletCommandWithdrawServiceTest {
 		assertThatThrownBy(() -> walletWithdrawService.withdrawPoint(command))
 			.isInstanceOf(WalletException.class);
 
+		// 위임도, 결제 호출도 일어나지 않아야 함
+		verify(pointTxRequestService, never()).withdrawPointRequest(any());
 		verify(paymentPort, never()).withdrawPoint(any(), any(), anyLong());
 	}
 
@@ -100,19 +99,15 @@ class WalletCommandWithdrawServiceTest {
 	void withdrawPoint_nullHistoryId_skipsDuplicateCheck() {
 		// given
 		UUID savedHistoryId = UUID.randomUUID();
-		PointTransactionRequestHistory savedHistory = mock(PointTransactionRequestHistory.class);
-		given(savedHistory.getPointTxRequestHistoryId()).willReturn(savedHistoryId);
-
-		given(walletRepository.findByUserId(userId)).willReturn(Optional.of(wallet));
-		given(pointTxRequestHistoryRepository.save(any())).willReturn(savedHistory);
-
 		WithdrawPointCommand command = new WithdrawPointCommand(userId, null, 10000L);
+		given(pointTxRequestService.withdrawPointRequest(command)).willReturn(savedHistoryId);
 
 		// when
 		walletWithdrawService.withdrawPoint(command);
 
-		// then: existsById는 호출되지 않음
+		// then
 		verify(pointTxRequestHistoryRepository, never()).existsById(any());
+		verify(pointTxRequestService).withdrawPointRequest(command);
 	}
 
 	// withdrawComplete
@@ -158,8 +153,7 @@ class WalletCommandWithdrawServiceTest {
 		long requestedAmount = 10000L;
 
 		Wallet wallet = mock(Wallet.class);
-		long balanceBefore = 50000L;
-		given(wallet.checkBalance()).willReturn(balanceBefore);
+		given(wallet.checkBalance()).willReturn(1000000L);
 
 		PointTransactionRequestHistory history =
 			PointTransactionRequestHistory.payoutRequest(wallet, requestedAmount);
@@ -176,8 +170,8 @@ class WalletCommandWithdrawServiceTest {
 		walletWithdrawService.withdrawComplete(command);
 
 		// then
-		// 잔액이 그대로인지 (실제 값 비교)
-		assertThat(wallet.checkBalance()).isEqualTo(balanceBefore);
+		// 잔액이 그대로인지 -> 한 번도 불리지 않음
+		verify(wallet, never()).withdraw(anyLong(), anyLong(), any(UUID.class));
 
 		// history 상태가 FAILED
 		assertThat(history.getRequestPoint()).isEqualTo(requestedAmount);
