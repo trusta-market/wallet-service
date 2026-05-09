@@ -45,7 +45,7 @@ public class PointTransactionRequestHistory {
 
 	public static PointTransactionRequestHistory payoutRequest(
 		Wallet wallet,
-		Long requestPoint
+		long requestPoint
 	) {
 		if (wallet == null) {
 			throw new IllegalArgumentException("지갑은 필수");
