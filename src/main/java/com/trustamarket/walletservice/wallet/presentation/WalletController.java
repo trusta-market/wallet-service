@@ -55,7 +55,7 @@ public class WalletController {
 		WithdrawPointResult result = walletCommandService.withdrawPoint(
 			WithdrawPointCommand.of(userId, request.pointTxRequestHistoryId(), request.withdrawAmount())
 		);
-		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result)); //PRG + body 비우기
+		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result));
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
