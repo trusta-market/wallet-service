@@ -14,11 +14,11 @@ public record WithdrawCompleteRequest(
 ) {
 	public static WithdrawCompleteRequest of(
 		UUID userId,
-		UUID paymentId,
-		UUID pointTxHistoryId,
+		UUID payoutId,
+		UUID pointTxRequestHistoryId,
 		String payoutStatus,
 		long withdrawAmount
 	) {
-		return new WithdrawCompleteRequest(userId, paymentId, pointTxHistoryId, payoutStatus, withdrawAmount);
+		return new WithdrawCompleteRequest(userId, payoutId, pointTxRequestHistoryId, payoutStatus, withdrawAmount);
 	}
 }
