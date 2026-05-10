@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
+import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 
 public interface PointTransactionJpaRepository extends JpaRepository<PointTransaction, UUID> {
 	@Query("""
@@ -43,4 +44,19 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
 		@Param("cursorId") UUID cursorId,
 		Pageable pageable
 	);
+
+	@Query("""
+		SELECT COUNT(pt) > 0 FROM PointTransaction pt
+		WHERE pt.ref.refId = :refId
+		  AND pt.pointTxType = :pointTxType
+    """)
+	boolean existsByRefIdAndPointTxType(UUID orderId, PointTxType pointTxType);
+
+	@Query("""
+    SELECT pt FROM PointTransaction pt 
+    WHERE pt.ref.refId = :orderId
+      AND pt.wallet.walletId = :walletId
+      AND pt.pointTxType = :pointTxType
+    """)
+	PointTransaction findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType);
 }

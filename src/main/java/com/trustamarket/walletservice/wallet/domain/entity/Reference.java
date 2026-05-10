@@ -36,6 +36,6 @@ record Reference(
 	 * `@param` payoutId 참조하는 Payment 객체의 ID
 	 */
 	static Reference withdrawal(UUID payoutId) {
-		return new Reference(payoutId, RefType.PAYMENT);
+		return new Reference(payoutId, RefType.WITHDRAW);
 	}
 }
