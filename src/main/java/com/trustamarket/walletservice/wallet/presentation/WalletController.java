@@ -22,12 +22,18 @@ import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.ChargePointRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.CreateSystemWalletRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.WithdrawPointRequest;
+import com.trustamarket.walletservice.wallet.application.dto.query.GetPointTransactionQuery;
+import com.trustamarket.walletservice.wallet.application.dto.result.GetPointTransactionPageResult;
+import com.trustamarket.walletservice.wallet.application.query.WalletQueryService;
+import com.trustamarket.walletservice.wallet.presentation.dto.request.GetPointTransactionsRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.response.ChargePointResponse;
 import com.trustamarket.walletservice.wallet.presentation.dto.response.CreateWalletResponse;
 import com.trustamarket.walletservice.wallet.presentation.dto.response.WithdrawPointResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 public class WalletController {
 	private final WalletCommandService walletCommandService;
 	private final SystemWalletCommandService systemWalletService;
+	private final WalletQueryService walletQueryService;
 
 	@PostMapping("/charges")
 	public CommonResponse<ChargePointResponse> chargePoint(@Valid @RequestBody ChargePointRequest request){
@@ -56,6 +63,28 @@ public class WalletController {
 			WithdrawPointCommand.of(userId, request.pointTxRequestHistoryId(), request.withdrawAmount())
 		);
 		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result));
+	}
+
+	@GetMapping("/transactions")
+	public CommonResponse<GetPointTransactionPageResult> getPointTransactions(
+		@Valid @ModelAttribute GetPointTransactionsRequest queryRequest
+	) {
+		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
+		GetPointTransactionPageResult result = walletQueryService.getPointTransactions(
+			userId,
+			GetPointTransactionQuery.of(
+				queryRequest.getValidFrom(), queryRequest.getValidTo(),
+				queryRequest.cursorTime(), queryRequest.cursorId(),
+				queryRequest.size())
+		);
+		return new CommonResponse<>(HttpStatus.OK.value(), result);
+	}
+
+	@GetMapping("/balances")
+	public CommonResponse<Long> getPointBalance() {
+		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
+		long balance = walletQueryService.getPoint(userId);
+		return new CommonResponse<>(HttpStatus.OK.value(), balance);
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")

@@ -4,7 +4,7 @@ import jakarta.persistence.Embeddable;
 
 @Embeddable
 record BalanceChange (
-	long balance,
+	long amount,
 	long balanceAfter
 ) {
 	BalanceChange {
@@ -15,10 +15,10 @@ record BalanceChange (
 		}
 	}
 
-	static BalanceChange of(long balanceBefore, long balance) {
+	static BalanceChange of(long balanceBefore, long amount) {
 		try {
-			long balanceAfter = Math.addExact(balanceBefore, balance);
-			return new BalanceChange(balance, balanceAfter);
+			long balanceAfter = Math.addExact(balanceBefore, amount);
+			return new BalanceChange(amount, balanceAfter);
 		} catch (ArithmeticException e) {
 			throw new IllegalStateException("포인트 계산 중 오버플로우 발생");
 		}
