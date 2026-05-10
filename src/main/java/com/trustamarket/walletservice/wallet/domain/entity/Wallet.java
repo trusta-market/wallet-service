@@ -104,7 +104,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		if (withdrawAmount != requestedAmount) {
 			throw new IllegalArgumentException("출금된 금액과 요청한 포인트가 다릅니다");
 		}
-		if(!balance.isEnough(withdrawAmount)) {
+		if(isEnough(withdrawAmount)) {
 			throw new IllegalArgumentException("출금을 위한 잔액이 충분하지 않습니다.");
 		}
 
@@ -144,6 +144,14 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		if (status != WalletStatus.ACTIVE) {
 			throw new RuntimeException("지갑이 활성 상태가 아닙니다.");
 		}
+	}
+
+	public boolean isEnough(long withdrawAmount) {
+		return balance.isEnough(withdrawAmount);
+	}
+
+	public boolean isNotUser() {
+		return this.walletType != WalletType.USER;
 	}
 
 	public void freeze() {

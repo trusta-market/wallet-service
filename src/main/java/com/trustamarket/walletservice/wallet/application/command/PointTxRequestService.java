@@ -26,6 +26,14 @@ public class PointTxRequestService {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
+		if (userWallet.isNotUser()) {
+			throw new WalletException(WalletErrorCode.SYSTEM_WALLET_WITHDRAWAL_NOT_ALLOWED);
+		}
+
+		if(!userWallet.isEnough(command.withdrawAmount())) {
+			throw new WalletException(WalletErrorCode.INVALID_BALANCE);
+		}
+
 		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
 			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount())
 		);

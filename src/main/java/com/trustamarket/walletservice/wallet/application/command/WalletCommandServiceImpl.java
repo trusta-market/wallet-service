@@ -136,11 +136,13 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		if (requestedHistoryId != null && isExistPointTxRequestHistory(requestedHistoryId)) {
 			throw new WalletException(ALREADY_EXISTS_POINT_TX_REQUEST);
 		}
+
+		//트렌젝션 나눴기 때문에 paymentPort에 대한 saga 힘들다.
 		UUID historyId = pointTxRequestService.withdrawPointRequest(command);
 
 		paymentPort.withdrawPoint(
 			command.userId(), historyId, command.withdrawAmount()
-		);
+		); // 이미 Reqhistory저장했는데 여기서 오류가 난다면 문제가 됨.
 
 		return new WithdrawPointResult(historyId);
 	}
