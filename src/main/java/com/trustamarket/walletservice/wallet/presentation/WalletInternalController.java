@@ -56,10 +56,10 @@ public class WalletInternalController {
 	public CommonResponse<Void> withdrawComplete(@Valid @RequestBody WithdrawCompleteRequest request) {
 		walletCommandService.withdrawComplete(WithdrawCompleteCommand.of(
 			request.userId(),
-			request.paymentId(),
-			request.pointTxHistoryId(),
+			request.payoutId(),
+			request.pointTxRequestHistoryId(),
 			PointRequestStatus.from(request.payoutStatus()),
-			request.withdrawAmount()
+			request.payoutAmount()
 		));
 		return new CommonResponse<>(HttpStatus.NO_CONTENT.value(), null);
 	}
