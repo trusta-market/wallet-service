@@ -40,7 +40,7 @@ public class PointCancelListener {
 			ack.acknowledge();
 		} catch (Exception e) {
 			if (isIdempotencyException(e)) {
-				log.info("[Idempotency] 중복/동시 이벤트 무시 및 성공 처리", message.orderId());
+				log.info("[Idempotency] 중복/동시 이벤트 무시 및 성공 처리:  orderId={}", message.orderId());
 				ack.acknowledge(); //수동 커밋
 				return;
 			}
