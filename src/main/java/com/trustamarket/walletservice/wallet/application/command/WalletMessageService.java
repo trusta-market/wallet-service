@@ -2,21 +2,21 @@ package com.trustamarket.walletservice.wallet.application.command;
 
 import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.trustamarket.walletservice.wallet.application.dto.message.CancelMessage;
-import com.trustamarket.walletservice.wallet.application.dto.message.WalletCancellationCompletedMessage;
+import com.trustamarket.walletservice.wallet.application.dto.event.CancelCompletedEvent;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.application.dto.message.CancelMessage;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,6 +27,7 @@ public class WalletMessageService implements WalletMessageUsecase {
 	private final WalletRepository walletRepository;
 	private final PointTransactionRepository pointTransactionRepository;
 	private final SystemWalletProvider systemWalletProvider;
+	private final ApplicationEventPublisher eventPublisher;
 	@Override
 	@Transactional
 	public void cancelProcess(CancelMessage message) {
@@ -60,12 +61,8 @@ public class WalletMessageService implements WalletMessageUsecase {
 		walletRepository.save(escrowWallet);
 		pointTransactionRepository.saveAll(List.of(pointUserCancelTx, pointEscrowCancelTx));
 
-		WalletCancellationCompletedMessage payload = new WalletCancellationCompletedMessage(
-			UUID.randomUUID(),       // eventId 생성
-			orderId,
-			cancelledAmount,
-			Instant.now()
-		);
+		CancelCompletedEvent cancelCompletedEvent = CancelCompletedEvent.of(orderId, cancelledAmount);
 
+		eventPublisher.publishEvent(cancelCompletedEvent);
 	}
 }
