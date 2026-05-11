@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.infrastructure.persistence;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
+import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.infrastructure.persistence.jpa.PointTransactionJpaRepository;
 
@@ -39,5 +41,15 @@ public class PointTransactionRepositoryImpl implements PointTransactionRepositor
 		UUID walletId, Instant from, Instant to,
 		Instant cursorTime, UUID cursorId, Pageable pageable) {
 		return  pointTransactionRepository.findNextPointTransactions(walletId, from, to, cursorTime, cursorId, pageable);
+	}
+
+	@Override
+	public boolean existsByRefIdAndPointTxType(UUID orderId, PointTxType pointTxType) {
+		return pointTransactionRepository.existsByRefIdAndPointTxType(orderId, pointTxType);
+	}
+
+	@Override
+	public Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType) {
+		return pointTransactionRepository.findByOrderIdAndWalletIdAndPointTxType(orderId, walletId, pointTxType);
 	}
 }

@@ -7,6 +7,9 @@ public enum PointTxType {
 	REFUND(null),
 	WITHDRAW(Direction.DECREASE),
 
+	CANCEL_IN(Direction.INCREASE), // user
+	CANCEL_OUT(Direction.DECREASE), // system
+
 	SETTLEMENT_IN(Direction.INCREASE),
 	SETTLEMENT_OUT(Direction.DECREASE),
 

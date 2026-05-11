@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
+//wallet 서비스를 settlement에서 써야하는데 이후 서버 분리 시 수정 최소화하기 위해 도입한 단계
 public class SettlementWalletAdapter implements SettlementWalletPort {
 	private final WalletCommandService walletCommandService;
 	@Override

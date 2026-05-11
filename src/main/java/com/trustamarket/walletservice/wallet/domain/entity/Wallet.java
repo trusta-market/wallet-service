@@ -92,6 +92,14 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		return decrease(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_OUT);
 	}
 
+	public PointTransaction cancelIn(long amount, UUID refId) {
+		return increase(amount, refId, RefType.ORDER, PointTxType.CANCEL_IN);
+	}
+
+	public PointTransaction cancelOut(long amount, UUID refId) {
+		return decrease(amount, refId, RefType.ORDER, PointTxType.CANCEL_OUT);
+	}
+
 	public PointTransaction increaseFeeRevenue(long amount, UUID refId) {
 		return increase(amount, refId, RefType.ORDER, PointTxType.FEE_REVENUE);
 	}

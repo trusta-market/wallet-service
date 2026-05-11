@@ -5,11 +5,13 @@ import java.util.UUID;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Embeddable
 record Reference(
 	UUID refId,
-	RefType refType
+	@Enumerated(EnumType.STRING) RefType refType
 ) {
 	Reference {
 		if (refId == null) {
