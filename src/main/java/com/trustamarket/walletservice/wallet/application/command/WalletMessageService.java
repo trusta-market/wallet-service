@@ -13,6 +13,7 @@ import com.trustamarket.walletservice.wallet.application.dto.event.CancelComplet
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
+import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
@@ -46,7 +47,8 @@ public class WalletMessageService implements WalletMessageUsecase {
 		);
 
 		PointTransaction pointTransaction = pointTransactionRepository.
-			findByOrderIdAndWalletIdAndPointTxType(orderId, userWallet.getWalletId(), PointTxType.BUYER_PAYMENT);
+			findByOrderIdAndWalletIdAndPointTxType(orderId, userWallet.getWalletId(), PointTxType.BUYER_PAYMENT)
+			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_POINT_TX_NOT_FOUND));
 
 		if (pointTransaction.getChangeAmount() != cancelledAmount) {
 			throw new WalletException(CANCELLED_AMOUNT_NOT_MATCH);
