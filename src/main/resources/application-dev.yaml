@@ -22,14 +22,17 @@ spring:
       ack-mode: manual
 
     consumer:
-      group-id: wallet-settlement-group
       auto-offset-reset: earliest
-      enable-auto-commit: false # 수동 커밋 사용 시 필수
+      enable-auto-commit: false
+
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.value.default.type: com.trustamarket.walletservice.settlement.application.dto.message.SettlePointSettlementMessage
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+management:
+  health:
+    redis:
+      enabled: false #아직 사용 안해서
