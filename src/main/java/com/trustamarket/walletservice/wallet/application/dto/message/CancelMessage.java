@@ -14,7 +14,7 @@ public record CancelMessage(
 		if (buyerId == null) {
 			throw new IllegalArgumentException("buyerId 필수입니다.");
 		}
-		if (cancelledAmount > 0) {
+		if (cancelledAmount <= 0) {
 			throw new IllegalArgumentException("cancelledAmount은 0원 보다 커야 합니다.");
 		}
 	}
