@@ -7,6 +7,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trustamarket.walletservice.settlement.application.command.SettlementCommandUsecase;
 import com.trustamarket.walletservice.settlement.application.dto.message.SettlePointSettlementMessage;
 import com.trustamarket.walletservice.settlement.domain.entity.SettlementHistory;
@@ -22,15 +24,21 @@ import lombok.extern.slf4j.Slf4j;
 public class PointSettlementListener {
 
 	private final SettlementCommandUsecase pointSettlementCommandUsecase;
-
+	private final ObjectMapper objectMapper;
 	@KafkaListener(
 		topics = "order.wallet-settlement.requested",
 		groupId = "wallet-settlement-group"
 	)
 	public void handle(
-		@Payload SettlePointSettlementMessage message,
+		@Payload String rawMessage,
 		@Header(value = "message_id", required = false) String messageId,
-		Acknowledgment ack) {
+		Acknowledgment ack) throws JsonProcessingException {
+
+		//todo 역직렬화 실패 복구처리
+		SettlePointSettlementMessage message = objectMapper.readValue(
+			rawMessage, SettlePointSettlementMessage.class
+		);
+
 		log.info("정산 요청 수신: eventId={}, orderId={}",
 			message.eventId(), message.orderId());
 

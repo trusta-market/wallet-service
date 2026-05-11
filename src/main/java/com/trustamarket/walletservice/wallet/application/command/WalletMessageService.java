@@ -1,6 +1,7 @@
 package com.trustamarket.walletservice.wallet.application.command;
 
 import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
+import static java.lang.Math.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,7 +51,7 @@ public class WalletMessageService implements WalletMessageUsecase {
 			findByOrderIdAndWalletIdAndPointTxType(orderId, userWallet.getWalletId(), PointTxType.BUYER_PAYMENT)
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_POINT_TX_NOT_FOUND));
 
-		if (pointTransaction.getChangeAmount() != cancelledAmount) {
+		if (abs(pointTransaction.getChangeAmount()) != cancelledAmount) {
 			throw new WalletException(CANCELLED_AMOUNT_NOT_MATCH);
 		}
 

@@ -10,6 +10,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trustamarket.walletservice.wallet.application.command.WalletMessageUsecase;
 import com.trustamarket.walletservice.wallet.application.dto.message.CancelMessage;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
@@ -23,15 +25,20 @@ import lombok.extern.slf4j.Slf4j;
 public class PointCancelListener {
 
 	private final WalletMessageUsecase walletMessageUsecase;
-
+	private final ObjectMapper objectMapper;
 	@KafkaListener(
 		topics = "order.cancellation.requested",
 		groupId = "wallet-cancellation-group"
 	)
 	public void handle(
-		@Payload CancelMessage message,
+		@Payload String rawMessage,
 		@Header(value = "message_id", required = false) String messageId,
-		Acknowledgment ack) {
+		Acknowledgment ack) throws JsonProcessingException {
+
+		//todo 역직렬화 실패 복구처리, common - jsonConfig bean
+		CancelMessage message = objectMapper.readValue(
+			rawMessage, CancelMessage.class
+		);
 		log.info("정산 요청 수신: orderId={}",
 			message.orderId());
 
