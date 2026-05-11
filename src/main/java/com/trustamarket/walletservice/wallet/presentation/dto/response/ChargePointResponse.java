@@ -6,15 +6,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record ChargePointResponse (
-    UUID paymentId,
-    long chargedAmount,
-    Instant chargedAt
+        UUID pointTxRequestHistoryId
 ) {
     public static ChargePointResponse from(ChargePointResult result) {
-        return new ChargePointResponse(
-            result.paymentId(),
-            result.chargedAmount(),
-            result.chargedAt()
-        );
+        return new ChargePointResponse(result.pointTxRequestHistoryId());
     }
 }
