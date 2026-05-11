@@ -1,5 +1,6 @@
 package com.trustamarket.walletservice.wallet.infrastructure.messaging;
 
+import static com.trustamarket.walletservice.wallet.domain.entity.PointTransaction.*;
 import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -9,7 +10,6 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-import com.trustamarket.walletservice.settlement.domain.entity.SettlementHistory;
 import com.trustamarket.walletservice.wallet.application.command.WalletMessageUsecase;
 import com.trustamarket.walletservice.wallet.application.dto.message.CancelMessage;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
@@ -60,7 +60,7 @@ public class PointCancelListener {
 		*/
 		if (e instanceof DataIntegrityViolationException de) {
 			String msg = de.getMostSpecificCause().getMessage();
-			return msg != null && msg.contains(SettlementHistory.UK_EVENT_ID);
+			return msg != null && msg.contains(CANCEL_UNIQUE_CONSTRAINT);
 		}
 		return false;
 	}

@@ -18,14 +18,25 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "p_point_transactions")
+@Table(
+	name = "p_point_transactions",
+	uniqueConstraints = {
+		@UniqueConstraint(
+			name = PointTransaction.CANCEL_UNIQUE_CONSTRAINT,
+			columnNames = {"ref_id", "tx_type"}
+		)
+	}
+)
 @Entity
 public class PointTransaction extends BaseCreatedEntity {
+	public static final String CANCEL_UNIQUE_CONSTRAINT = "uk_point_tx_ref_type";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	@Getter
