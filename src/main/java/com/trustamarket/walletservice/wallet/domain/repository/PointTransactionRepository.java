@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.domain.repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,6 @@ public interface PointTransactionRepository {
 	Slice<PointTransaction> findFirstPointTransactions(UUID walletId, Instant from, Instant to, Pageable pageable);
 	Slice<PointTransaction> findNextPointTransactions(UUID walletId, Instant from, Instant to, Instant cursorTime, UUID cursorId, Pageable pageable);
 
-	boolean existsByRefIdAndPointTxType(UUID orderId, PointTxType CANCEL_IN);
-	PointTransaction findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType BUYER_PAYMENT);
+	boolean existsByRefIdAndPointTxType(UUID orderId, PointTxType pointTxType);
+	Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType);
 }

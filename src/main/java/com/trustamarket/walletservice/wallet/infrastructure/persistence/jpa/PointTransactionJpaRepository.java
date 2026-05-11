@@ -1,6 +1,7 @@
 package com.trustamarket.walletservice.wallet.infrastructure.persistence.jpa;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -50,7 +51,7 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
 		WHERE pt.ref.refId = :refId
 		  AND pt.pointTxType = :pointTxType
     """)
-	boolean existsByRefIdAndPointTxType(UUID orderId, PointTxType pointTxType);
+	boolean existsByRefIdAndPointTxType(@Param("refId") UUID refId, @Param("pointTxType") PointTxType pointTxType);
 
 	@Query("""
     SELECT pt FROM PointTransaction pt 
@@ -58,5 +59,5 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
       AND pt.wallet.walletId = :walletId
       AND pt.pointTxType = :pointTxType
     """)
-	PointTransaction findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType);
+	Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(@Param("orderId") UUID orderId, @Param("walletId") UUID walletId, @Param("pointTxType")PointTxType pointTxType);
 }

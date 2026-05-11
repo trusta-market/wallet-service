@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.infrastructure.persistence;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -48,7 +49,7 @@ public class PointTransactionRepositoryImpl implements PointTransactionRepositor
 	}
 
 	@Override
-	public PointTransaction findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType) {
+	public Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType) {
 		return pointTransactionRepository.findByOrderIdAndWalletIdAndPointTxType(orderId, walletId, pointTxType);
 	}
 }
