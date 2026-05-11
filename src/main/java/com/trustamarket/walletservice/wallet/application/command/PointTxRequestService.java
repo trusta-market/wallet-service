@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.application.command;
 
 import java.util.UUID;
 
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,22 @@ public class PointTxRequestService {
 
 		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
 			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount())
+		);
+
+		return pointTxRequestHistory.getPointTxRequestHistoryId();
+	}
+
+	@Transactional
+	public UUID chargePointRequest(ChargePointCommand command) {
+		Wallet userWallet = walletRepository.findByUserId(command.userId())
+				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+
+		if (userWallet.isNotUser()) {
+			throw new WalletException(WalletErrorCode.SYSTEM_WALLET_WITHDRAWAL_NOT_ALLOWED);
+		}
+
+		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
+				PointTransactionRequestHistory.paymentRequest(userWallet, command.chargeAmount())
 		);
 
 		return pointTxRequestHistory.getPointTxRequestHistoryId();

@@ -46,14 +46,12 @@ public class WalletController {
 	@PostMapping("/charges")
 	public CommonResponse<ChargePointResponse> chargePoint(@Valid @RequestBody ChargePointRequest request){
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
-		UUID paymentId = UUID.randomUUID();
 
-		ChargePointCommand command = new ChargePointCommand(userId, paymentId, request.chargeAmount());
+		ChargePointCommand command = new ChargePointCommand(userId, request.pointTxRequestHistoryId(), request.chargeAmount());
 		ChargePointResult result = walletCommandService.chargePoint(command);
-
 		ChargePointResponse response = ChargePointResponse.from(result);
 
-		return new CommonResponse(HttpStatus.OK.value(), response);
+		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), response);
 	}
 
 	@PostMapping("/withdrawals")

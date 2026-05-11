@@ -43,6 +43,27 @@ public class PointTransactionRequestHistory {
 	@Getter
 	private long requestPoint;
 
+	public static PointTransactionRequestHistory paymentRequest(
+			Wallet wallet,
+			long requestPoint
+	) {
+		if (wallet == null) {
+			throw new IllegalArgumentException("지갑은 필수");
+		}
+		if (requestPoint <= 0) {
+			throw new IllegalArgumentException("충전 금액은 1원 이상이어야 합니다.");
+		}
+
+		PointTransactionRequestHistory pointTransactionRequestHistory = new PointTransactionRequestHistory();
+		pointTransactionRequestHistory.wallet = wallet;
+		pointTransactionRequestHistory.requestPoint = requestPoint;
+		pointTransactionRequestHistory.requestType = PointRequestType.CHARGE;
+		pointTransactionRequestHistory.status = PointRequestStatus.REQUESTED;
+
+		return pointTransactionRequestHistory;
+	}
+
+
 	public static PointTransactionRequestHistory payoutRequest(
 		Wallet wallet,
 		long requestPoint

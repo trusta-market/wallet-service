@@ -117,7 +117,19 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Transactional
 	public ChargePointResult chargePoint(ChargePointCommand command) {
-		return paymentPort.chargePoint(command.userId(), command.paymentId(), command.chargeAmount());
+		UUID requestedHistoryId = command.pointTxRequestHistoryId();
+
+		if (requestedHistoryId != null && isExistPointTxRequestHistory(requestedHistoryId)) {
+			throw new WalletException(ALREADY_EXISTS_POINT_TX_REQUEST);
+		}
+
+		UUID historyId = pointTxRequestService.chargePointRequest(command);
+
+		paymentPort.chargePoint(
+				command.userId(), historyId, command.chargeAmount()
+		);
+
+		return new ChargePointResult(historyId);
 	}
 
 	@Transactional
