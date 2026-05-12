@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trustamarket.common.response.CommonResponse;
@@ -31,10 +32,11 @@ import lombok.RequiredArgsConstructor;
 public class WalletInternalController {
 	private final WalletCommandService walletCommandService;
 
+	@ResponseStatus(HttpStatus.CREATED)
 	@PostMapping
-	public CommonResponse<CreateWalletResponse> createWallet(@RequestBody CreateWalletRequest request) {
+	public CreateWalletResponse createWallet(@RequestBody CreateWalletRequest request) {
 		CreateWalletResult createResult = walletCommandService.createWallet(request.userId());
-		return new CommonResponse<>(HttpStatus.CREATED.value(), new CreateWalletResponse(createResult.result()));
+		return new CreateWalletResponse(createResult.result());
 	}
 
 	@PatchMapping("/usages")
