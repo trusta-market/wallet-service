@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 	name = "p_point_transactions",
 	uniqueConstraints = {
 		@UniqueConstraint(
-			name = PointTransaction.CANCEL_UNIQUE_CONSTRAINT,
+			name = PointTransaction.CANCEL_UNIQUE_CONSTRAINT, // 부분 환불, 결제가 정책 상 존재X (YAGNI)
 			columnNames = {"ref_id", "tx_type"}
 		)
 	}

@@ -33,9 +33,8 @@ public class WalletInternalController {
 
 	@PostMapping
 	public CommonResponse<CreateWalletResponse> createWallet(@RequestBody CreateWalletRequest request) {
-		CreateWalletResult result = walletCommandService.createWallet(request.userId());
-
-		return new CommonResponse<>(HttpStatus.CREATED.value(), new CreateWalletResponse(result.walletId()));
+		CreateWalletResult createResult = walletCommandService.createWallet(request.userId());
+		return new CommonResponse<>(HttpStatus.CREATED.value(), new CreateWalletResponse(createResult.result()));
 	}
 
 	@PatchMapping("/usages")

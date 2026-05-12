@@ -19,11 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.trustamarket.walletservice.wallet.application.command.SystemWalletProvider;
 import com.trustamarket.walletservice.wallet.application.command.WalletCommandServiceImpl;
 import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCommand;
+import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
-import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
@@ -74,10 +74,14 @@ class WalletCommandServiceTest {
 
 			when(walletRepository.existsByUserId(userId)).thenReturn(true);
 
-			assertThatThrownBy(() -> walletCommandService.createWallet(userId))
-				.isInstanceOf(WalletException.class)
-				.extracting("errorCode")
-				.isEqualTo(WalletErrorCode.ALREADY_EXISTS_WALLET);
+			CreateWalletResult result = walletCommandService.createWallet(userId);
+			
+			assertThat(result.result()).isFalse();
+			assertThat(result.walletId()).isNull();
+			// assertThatThrownBy(() -> walletCommandService.createWallet(userId))
+				// .isInstanceOf(WalletException.class)
+				// .extracting("errorCode")
+				// .isEqualTo(WalletErrorCode.ALREADY_EXISTS_WALLET);
 		}
 	}
 

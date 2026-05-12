@@ -49,17 +49,21 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Transactional
 	public CreateWalletResult createWallet(UUID userId) {
-		if (userId == null) {
-			throw new IllegalArgumentException("사용자 ID는 필수입니다");
-		}
+		try {
+			if (userId == null) {
+				throw new IllegalArgumentException("사용자 ID는 필수입니다");
+			}
 
-		if (walletRepository.existsByUserId(userId)) {
-			throw new WalletException(ALREADY_EXISTS_WALLET);
+			if (walletRepository.existsByUserId(userId)) {
+				throw new WalletException(ALREADY_EXISTS_WALLET);
+			}
+		} catch(Exception e) {
+			return new CreateWalletResult(null, false);
 		}
 
 		Wallet wallet = Wallet.createUserWallet(userId);
 		walletRepository.save(wallet); //DataIntegrity exception은 RestControllerAdvice에서 처리
-		return new CreateWalletResult(wallet.getWalletId());
+		return new CreateWalletResult(wallet.getWalletId(), true);
 	}
 
 	@Transactional
