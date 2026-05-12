@@ -48,7 +48,7 @@ public class PointTxRequestService {
 				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
 		if (userWallet.isNotUser()) {
-			throw new WalletException(WalletErrorCode.SYSTEM_WALLET_WITHDRAWAL_NOT_ALLOWED);
+			throw new WalletException(WalletErrorCode.SYSTEM_WALLET_CHARGE_NOT_ALLOWED);
 		}
 
 		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
