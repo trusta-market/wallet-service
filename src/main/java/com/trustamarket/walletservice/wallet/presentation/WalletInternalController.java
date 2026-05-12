@@ -47,19 +47,25 @@ public class WalletInternalController {
 
 	@PostMapping("/charges")
 	public CommonResponse<Void> chargeComplete(@Valid @RequestBody ChargeCompleteRequest request){
-		walletCommandService.chargeComplete(new ChargeCompleteCommand(request.userId(), request.paymentId(), request.chargeAmount()));
+		walletCommandService.chargeComplete(new ChargeCompleteCommand(
+				request.userId(),
+				request.paymentId(),
+				request.pointTxRequestHistoryId(),
+				request.paymentStatus(),
+				request.chargeAmount()
+		));
 
-		return new CommonResponse(HttpStatus.OK.value(), null);
+		return new CommonResponse(HttpStatus.NO_CONTENT.value(), null);
 	}
 
 	@PostMapping("/withdrawals")
 	public CommonResponse<Void> withdrawComplete(@Valid @RequestBody WithdrawCompleteRequest request) {
 		walletCommandService.withdrawComplete(WithdrawCompleteCommand.of(
 			request.userId(),
-			request.paymentId(),
-			request.pointTxHistoryId(),
+			request.payoutId(),
+			request.pointTxRequestHistoryId(),
 			PointRequestStatus.from(request.payoutStatus()),
-			request.withdrawAmount()
+			request.payoutAmount()
 		));
 		return new CommonResponse<>(HttpStatus.NO_CONTENT.value(), null);
 	}

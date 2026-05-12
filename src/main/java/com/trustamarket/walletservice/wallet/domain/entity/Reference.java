@@ -40,4 +40,6 @@ record Reference(
 	static Reference withdrawal(UUID payoutId) {
 		return new Reference(payoutId, RefType.PAYMENT);
 	}
+
+	static Reference charge(UUID paymentId) { return new Reference(paymentId, RefType.PAYMENT); }
 }

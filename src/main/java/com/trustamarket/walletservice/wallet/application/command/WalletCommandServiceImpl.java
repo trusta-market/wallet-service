@@ -135,11 +135,26 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	@Transactional
 	public void chargeComplete(ChargeCompleteCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
-				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 
-		PointTransaction chargeTx = userWallet.chargeComplete(command.chargedAmount(), command.paymentId());
-		walletRepository.save(userWallet);
-		pointTransactionRepository.save(chargeTx);
+		long chargeAmount = command.chargedAmount();
+		UUID refId = command.paymentId();
+
+		PointTransactionRequestHistory pointTxRequestHistory =
+				pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
+						.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
+
+		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
+			pointTxRequestHistory.success();
+			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
+
+			walletRepository.save(userWallet);
+			pointTransactionRepository.save(chargeTx);
+		} else {
+			pointTxRequestHistory.fail();
+		}
+
+		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 	}
 
 	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
