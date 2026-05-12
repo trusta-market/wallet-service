@@ -4,7 +4,5 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record ChargePointResult (
-        UUID paymentId,
-        long chargedAmount,
-        Instant chargedAt
+        UUID pointTxRequestHistoryId
 ) {}

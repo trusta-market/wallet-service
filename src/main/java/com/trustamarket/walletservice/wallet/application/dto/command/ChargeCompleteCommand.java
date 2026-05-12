@@ -1,10 +1,14 @@
 package com.trustamarket.walletservice.wallet.application.dto.command;
 
+import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
+
 import java.util.UUID;
 
 public record ChargeCompleteCommand (
         UUID userId,
         UUID paymentId,
+        UUID pointTxRequestHistoryId,
+        PointRequestStatus requestResultStatus,
         long chargedAmount
 ) {
     public ChargeCompleteCommand {

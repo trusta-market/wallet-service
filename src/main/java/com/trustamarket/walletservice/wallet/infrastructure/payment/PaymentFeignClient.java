@@ -6,14 +6,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.trustamarket.common.response.CommonResponse;
 import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.PaymentPointRequest;
-import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.PaymentPointResponse;
 import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.WithdrawRequest;
 
 @FeignClient(name = "payment-service", path = "/internal/v1")
 public interface PaymentFeignClient {
 
     @PostMapping("/payments/charges")
-    CommonResponse<PaymentPointResponse> paymentPoint(
+    CommonResponse<Void> paymentPoint(
             @RequestBody PaymentPointRequest request
     );
 

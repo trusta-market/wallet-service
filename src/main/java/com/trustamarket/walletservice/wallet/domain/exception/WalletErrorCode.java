@@ -11,7 +11,8 @@ public enum WalletErrorCode implements ErrorCodeSpec {
 	INVALID_STATUS_TRANSITION("WALLET_202", HttpStatus.BAD_REQUEST, "INVALID_STATUS_TRANSITION", null),
 	INVALID_BALANCE("WALLET_203", HttpStatus.BAD_REQUEST, "잔액 부족", "balance"),
 	SYSTEM_WALLET_WITHDRAWAL_NOT_ALLOWED("WALLET_204", HttpStatus.FORBIDDEN, "시스템 계정은 출금할 수 없습니다.", "walletType"),
-	CANCELLED_AMOUNT_NOT_MATCH("WALLET_205", HttpStatus.BAD_REQUEST, "CANCELLED_AMOUNT_NOT_MATCH", "cancelledAmount"),
+	SYSTEM_WALLET_CHARGE_NOT_ALLOWED("WALLET_205", HttpStatus.FORBIDDEN, "시스템 계정은 충전할 수 없습니다.", "walletType"),
+	CANCELLED_AMOUNT_NOT_MATCH("WALLET_206", HttpStatus.BAD_REQUEST, "CANCELLED_AMOUNT_NOT_MATCH", "cancelledAmount"),
 
 	// WALLET_3XX → 조회 실패 (NOT_FOUND)
 	WALLET_NOT_FOUND("WALLET_301", HttpStatus.NOT_FOUND, "지갑을 찾을 수 없습니다.", "userId"),
