@@ -23,8 +23,8 @@ public class PaymentAdapter implements PaymentPort {
     }
 
     @Override
-    public void withdrawPoint(UUID userId, UUID pointTxRequestHitoryId, long withdrawAmount) {
-        WithdrawRequest request = new WithdrawRequest(userId, pointTxRequestHitoryId, withdrawAmount);
+    public void withdrawPoint(UUID userId, UUID pointTxRequestHistoryId, long withdrawAmount) {
+        WithdrawRequest request = new WithdrawRequest(userId, pointTxRequestHistoryId, withdrawAmount);
         paymentFeignClient.withdraw(request);
     }
 }
