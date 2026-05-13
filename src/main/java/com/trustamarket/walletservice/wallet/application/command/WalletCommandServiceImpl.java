@@ -49,16 +49,14 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Transactional
 	public CreateWalletResult createWallet(UUID userId) {
-		try {
-			if (userId == null) {
-				throw new IllegalArgumentException("사용자 ID는 필수입니다");
-			}
-
-			if (walletRepository.existsByUserId(userId)) {
-				throw new WalletException(ALREADY_EXISTS_WALLET);
-			}
-		} catch(Exception e) {
+		if (userId == null) {
+			// throw new IllegalArgumentException("사용자 ID는 필수입니다");
 			return new CreateWalletResult(null, false);
+		}
+
+		if (walletRepository.existsByUserId(userId)) {
+			// throw new WalletException(ALREADY_EXISTS_WALLET);
+			return new CreateWalletResult(null, true);
 		}
 
 		Wallet wallet = Wallet.createUserWallet(userId);
