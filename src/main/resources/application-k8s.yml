@@ -1,0 +1,37 @@
+# K8s 환경 전용 override (SPRING_PROFILES_ACTIVE=k8s 일 때만 로드).
+
+server:
+  port: 8302
+
+spring:
+  config:
+    import: "optional:configserver:http://config-server"
+  cloud:
+    config:
+      uri: http://config-server
+      label: develop
+      fail-fast: false
+      # application.yaml 의 discovery.enabled:true 를 K8s 에선 비활성 (Service DNS 직접 사용)
+      discovery:
+        enabled: false
+  datasource:
+    url: jdbc:postgresql://postgres:5432/trusta_market
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: p_wallet
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
