@@ -48,11 +48,11 @@ spec:
                   key: DB_PASSWORD
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              cpu: 700m
+              memory: 2Gi
             limits:
               cpu: 1000m
-              memory: 2Gi
+              memory: 2500Mi
           # startupProbe — /actuator/health/liveness (application 자체만).
           # /actuator/health (전체 합산) 는 외부 의존성 (Kafka 등) DOWN 시 503 → kill.
           startupProbe:
