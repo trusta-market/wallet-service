@@ -32,8 +32,19 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   # Kafka — GKE namespace 'kafka' 의 StatefulSet 3 broker.
+  # listener.ack-mode: manual — PointSettlementListener 가 Acknowledgment 파라미터 받음.
   kafka:
     bootstrap-servers: kafka.kafka:9092
+    listener:
+      ack-mode: manual
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 eureka:
   client:
