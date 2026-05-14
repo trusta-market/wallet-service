@@ -26,6 +26,14 @@ spring:
         default_schema: p_wallet
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
+  # Redis — K8s 환경 미사용. RedisAutoConfiguration 비활성 (캐싱 코드 있어도 startup OK).
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  # Kafka — GKE namespace 'kafka' 의 StatefulSet 3 broker.
+  kafka:
+    bootstrap-servers: kafka.kafka:9092
 
 eureka:
   client:
