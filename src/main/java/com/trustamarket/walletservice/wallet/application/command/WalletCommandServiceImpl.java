@@ -4,6 +4,7 @@ import static com.trustamarket.walletservice.wallet.domain.exception.WalletError
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,6 +48,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	private final PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
 
 	private final PointTxRequestService pointTxRequestService;
+	private final IdempotencyHandler idempotencyHandler;
 
 	@Transactional
 	public CreateWalletResult createWallet(UUID userId) {
@@ -160,10 +163,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	}
 
 	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
-		UUID requestedHistoryId = command.pointTxHistoryId();
-		// 클라이언트 키 충돌 시 에러
-		if (requestedHistoryId != null && isExistPointTxRequestHistory(requestedHistoryId)) {
-			throw new WalletException(ALREADY_EXISTS_POINT_TX_REQUEST);
+		String idempotencyKey = command.idempotencyKey();
+
+		Optional<PointTransactionRequestHistory> pointTxRequestHistory = idempotencyHandler.check(idempotencyKey);
+		if (pointTxRequestHistory.isPresent()) {
+			return new WithdrawPointResult(pointTxRequestHistory.get().getPointTxRequestHistoryId());
 		}
 
 		//트렌젝션 나눴기 때문에 paymentPort에 대한 saga 힘들다.
@@ -174,9 +178,6 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		); // 이미 Reqhistory저장했는데 여기서 오류가 난다면 문제가 됨.
 
 		return new WithdrawPointResult(historyId);
-	}
-	private boolean isExistPointTxRequestHistory(UUID requestedHistoryId){
-		return pointTxRequestHistoryRepository.existsById(requestedHistoryId);
 	}
 
 	@Transactional
