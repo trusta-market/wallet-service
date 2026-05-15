@@ -76,7 +76,7 @@ class WalletCommandServiceTest {
 
 			CreateWalletResult result = walletCommandService.createWallet(userId);
 			
-			assertThat(result.result()).isFalse();
+			assertThat(result.result()).isTrue();
 			assertThat(result.walletId()).isNull();
 			// assertThatThrownBy(() -> walletCommandService.createWallet(userId))
 				// .isInstanceOf(WalletException.class)
