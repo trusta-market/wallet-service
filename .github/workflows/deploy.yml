@@ -2,7 +2,7 @@ name: Build & Deploy wallet-service
 
 on:
   push:
-    branches: [develop, dev]
+    branches: [develop, dev, 'hotfix/**']
   workflow_dispatch:
 
 jobs:
