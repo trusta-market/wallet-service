@@ -29,6 +29,7 @@ import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
 
 @ExtendWith(MockitoExtension.class)
 class WalletCommandWithdrawServiceTest {
@@ -38,6 +39,7 @@ class WalletCommandWithdrawServiceTest {
 	@Mock private PointTransactionRepository pointTransactionRepository;
 	@Mock private PaymentPort paymentPort;
 	@Mock private PointTxRequestService pointTxRequestService;
+	@Mock private IdempotencyHandler idempotencyHandler;
 
 	@InjectMocks
 	private WalletCommandServiceImpl walletWithdrawService;
@@ -60,8 +62,9 @@ class WalletCommandWithdrawServiceTest {
 		// given
 		long amount = 10000L;
 		UUID savedHistoryId = UUID.randomUUID();
+		String idempotencyKey = UUID.randomUUID().toString();
 
-		WithdrawPointCommand command = new WithdrawPointCommand(userId, null, amount);
+		WithdrawPointCommand command = new WithdrawPointCommand(userId, idempotencyKey, amount);
 		given(pointTxRequestService.withdrawPointRequest(command)).willReturn(savedHistoryId);
 
 		// when
@@ -74,40 +77,78 @@ class WalletCommandWithdrawServiceTest {
 	}
 
 	@Test
-	@DisplayName("이미 존재하는 historyId로 출금 요청 시 예외 발생")
-	void withdrawPoint_duplicateHistoryId_throwsException() {
+	@DisplayName("신규 idempotency key는 멱등성 체크 후 신규 출금 요청으로 처리된다")
+	void withdrawPoint_newIdempotencyKey_proceedsAsNewRequest() {
 		// given
-		UUID existingHistoryId = UUID.randomUUID();
-		given(pointTxRequestHistoryRepository.existsById(existingHistoryId))
-			.willReturn(true);
+		String idempotencyKey = UUID.randomUUID().toString();
+		UUID savedHistoryId = UUID.randomUUID();
+		long withdrawAmount = 10000L;
 
 		WithdrawPointCommand command = new WithdrawPointCommand(
-			userId, existingHistoryId, 10000L
+			userId, idempotencyKey, withdrawAmount
 		);
 
-		// when & then
-		assertThatThrownBy(() -> walletWithdrawService.withdrawPoint(command))
-			.isInstanceOf(WalletException.class);
+		given(idempotencyHandler.check(idempotencyKey))
+			.willReturn(Optional.empty());
+		given(pointTxRequestService.withdrawPointRequest(command))
+			.willReturn(savedHistoryId);
 
-		// 위임도, 결제 호출도 일어나지 않아야 함
+		// when
+		WithdrawPointResult result = walletWithdrawService.withdrawPoint(command);
+
+		// then
+		assertThat(result.pointTxRequestHistoryId()).isEqualTo(savedHistoryId);
+
+		verify(idempotencyHandler).check(idempotencyKey);
+		verify(pointTxRequestService).withdrawPointRequest(command);
+		verify(paymentPort).withdrawPoint(userId, savedHistoryId, withdrawAmount);
+	}
+
+	@Test
+	@DisplayName("이미 성공한 idempotency key로 재요청 시 기존 historyId를 반환한다")
+	void withdrawPoint_alreadySucceeded_returnsExistingHistoryId() {
+		// given
+		String idempotencyKey = UUID.randomUUID().toString();
+		UUID existingHistoryId = UUID.randomUUID();
+
+		PointTransactionRequestHistory existingHistory = mock(PointTransactionRequestHistory.class);
+		given(existingHistory.getPointTxRequestHistoryId()).willReturn(existingHistoryId);
+		given(idempotencyHandler.check(idempotencyKey))
+			.willReturn(Optional.of(existingHistory));
+
+		WithdrawPointCommand command = new WithdrawPointCommand(
+			userId, idempotencyKey, 10000L
+		);
+
+		// when
+		WithdrawPointResult result = walletWithdrawService.withdrawPoint(command);
+
+		// then
+		assertThat(result.pointTxRequestHistoryId()).isEqualTo(existingHistoryId);
+
 		verify(pointTxRequestService, never()).withdrawPointRequest(any());
 		verify(paymentPort, never()).withdrawPoint(any(), any(), anyLong());
 	}
 
 	@Test
-	@DisplayName("historyId가 null이면 중복 체크 없이 새로 요청한다")
-	void withdrawPoint_nullHistoryId_skipsDuplicateCheck() {
+	@DisplayName("진행 중이거나 실패한 idempotency key로 재요청 시 예외가 발생한다")
+	void withdrawPoint_inProgressOrFailed_throwsException() {
 		// given
-		UUID savedHistoryId = UUID.randomUUID();
-		WithdrawPointCommand command = new WithdrawPointCommand(userId, null, 10000L);
-		given(pointTxRequestService.withdrawPointRequest(command)).willReturn(savedHistoryId);
+		String idempotencyKey = UUID.randomUUID().toString();
 
-		// when
-		walletWithdrawService.withdrawPoint(command);
+		given(idempotencyHandler.check(idempotencyKey))
+			.willThrow(new RuntimeException("already in progress or failed"));
 
-		// then
-		verify(pointTxRequestHistoryRepository, never()).existsById(any());
-		verify(pointTxRequestService).withdrawPointRequest(command);
+		WithdrawPointCommand command = new WithdrawPointCommand(
+			userId, idempotencyKey, 10000L
+		);
+
+		// when & then
+		assertThatThrownBy(() -> walletWithdrawService.withdrawPoint(command))
+			.isInstanceOf(RuntimeException.class);
+
+		verify(pointTxRequestService, never()).withdrawPointRequest(any());
+		verify(paymentPort, never()).withdrawPoint(any(), any(), anyLong());
 	}
 
 	// withdrawComplete
@@ -150,13 +191,14 @@ class WalletCommandWithdrawServiceTest {
 	void withdrawComplete_failed() {
 		UUID historyId = UUID.randomUUID();
 		UUID paymentId = UUID.randomUUID();
+		String idempotencyKey = UUID.randomUUID().toString();
 		long requestedAmount = 10000L;
 
 		Wallet wallet = mock(Wallet.class);
 		given(wallet.checkBalance()).willReturn(1000000L);
 
 		PointTransactionRequestHistory history =
-			PointTransactionRequestHistory.payoutRequest(wallet, requestedAmount);
+			PointTransactionRequestHistory.payoutRequest(wallet, requestedAmount, idempotencyKey);
 
 		given(pointTxRequestHistoryRepository.findById(historyId))
 			.willReturn(Optional.of(history));
