@@ -27,6 +27,11 @@ public class PointTransactionRequestHistoryRepositoryImpl implements PointTransa
 	}
 
 	@Override
+	public Optional<PointTransactionRequestHistory> findByIdempotencyKey(String IdempotencyKey) {
+		return pointTransactionRequestHistoryRepository.findByIdempotencyKey(IdempotencyKey);
+	}
+
+	@Override
 	public boolean existsById(UUID pointTxHistoryId) {
 		return pointTransactionRequestHistoryRepository.existsById(pointTxHistoryId);
 	}

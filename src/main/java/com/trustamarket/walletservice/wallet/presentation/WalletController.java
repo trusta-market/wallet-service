@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -55,10 +56,13 @@ public class WalletController {
 	}
 
 	@PostMapping("/withdrawals")
-	public CommonResponse<WithdrawPointResponse> withdrawRequest(@Valid @RequestBody WithdrawPointRequest request) {
+	public CommonResponse<WithdrawPointResponse> withdrawRequest(
+		@RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey,
+		@Valid @RequestBody WithdrawPointRequest request
+	) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		WithdrawPointResult result = walletCommandService.withdrawPoint(
-			WithdrawPointCommand.of(userId, request.pointTxRequestHistoryId(), request.withdrawAmount())
+			WithdrawPointCommand.of(userId, idempotencyKey, request.withdrawAmount())
 		);
 		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result));
 	}

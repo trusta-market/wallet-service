@@ -36,7 +36,7 @@ public class PointTxRequestService {
 		}
 
 		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
-			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount())
+			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount(), command.idempotencyKey())
 		);
 
 		return pointTxRequestHistory.getPointTxRequestHistoryId();
