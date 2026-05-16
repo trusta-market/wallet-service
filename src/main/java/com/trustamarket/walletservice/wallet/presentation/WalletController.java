@@ -45,10 +45,11 @@ public class WalletController {
 	private final WalletQueryService walletQueryService;
 
 	@PostMapping("/charges")
-	public CommonResponse<ChargePointResponse> chargePoint(@Valid @RequestBody ChargePointRequest request){
+	public CommonResponse<ChargePointResponse> chargePoint(@Valid @RequestBody ChargePointRequest request) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 
-		ChargePointCommand command = new ChargePointCommand(userId, request.pointTxRequestHistoryId(), request.chargeAmount());
+		ChargePointCommand command = new ChargePointCommand(userId, request.pointTxRequestHistoryId(),
+				request.chargeAmount());
 		ChargePointResult result = walletCommandService.chargePoint(command);
 		ChargePointResponse response = ChargePointResponse.from(result);
 
@@ -57,28 +58,24 @@ public class WalletController {
 
 	@PostMapping("/withdrawals")
 	public CommonResponse<WithdrawPointResponse> withdrawRequest(
-		@RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey,
-		@Valid @RequestBody WithdrawPointRequest request
-	) {
+			@RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey,
+			@Valid @RequestBody WithdrawPointRequest request) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		WithdrawPointResult result = walletCommandService.withdrawPoint(
-			WithdrawPointCommand.of(userId, idempotencyKey, request.withdrawAmount())
-		);
+				WithdrawPointCommand.of(userId, idempotencyKey, request.withdrawAmount()));
 		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result));
 	}
 
 	@GetMapping("/transactions")
 	public CommonResponse<GetPointTransactionPageResult> getPointTransactions(
-		@Valid @ModelAttribute GetPointTransactionsRequest queryRequest
-	) {
+			@Valid @ModelAttribute GetPointTransactionsRequest queryRequest) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		GetPointTransactionPageResult result = walletQueryService.getPointTransactions(
-			userId,
-			GetPointTransactionQuery.of(
-				queryRequest.getValidFrom(), queryRequest.getValidTo(),
-				queryRequest.cursorTime(), queryRequest.cursorId(),
-				queryRequest.size())
-		);
+				userId,
+				GetPointTransactionQuery.of(
+						queryRequest.getValidFrom(), queryRequest.getValidTo(),
+						queryRequest.cursorTime(), queryRequest.cursorId(),
+						queryRequest.size()));
 		return new CommonResponse<>(HttpStatus.OK.value(), result);
 	}
 
@@ -91,10 +88,10 @@ public class WalletController {
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/system")
-	public CommonResponse<CreateSystemWalletResponse> createSystemWallet(@Valid @RequestBody CreateSystemWalletRequest request) {
+	public CommonResponse<CreateSystemWalletResponse> createSystemWallet(
+			@Valid @RequestBody CreateSystemWalletRequest request) {
 		Wallet result = systemWalletService.createSystemWallet(
-			CreateSystemWalletDto.of(request.operatorId(), request.walletType())
-		);
+				CreateSystemWalletDto.of(request.operatorId(), request.walletType()));
 
 		return new CommonResponse<>(HttpStatus.CREATED.value(), CreateSystemWalletResponse.from(result));
 	}
