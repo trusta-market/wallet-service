@@ -54,3 +54,10 @@ eureka:
     fetch-registry: true
   instance:
     prefer-ip-address: true
+    
+# common 의 LoginFilter 가 gateway 의 X-User-* 헤더 → SecurityContext 로 주입.
+# false (default) 면 LoginFilter 가 전체 skip → SecurityContext 미설정 →
+# /internal/** 등 인증 필요한 path 가 401 반환. wallet → payment Feign 호출이 깨짐.
+trusta:
+  security:
+    trust-gateway-headers: true

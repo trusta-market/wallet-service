@@ -138,6 +138,10 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		return new ChargePointResult(historyId);
 	}
 
+	private boolean isExistPointTxRequestHistory(UUID requestedHistoryId){
+		return pointTxRequestHistoryRepository.existsById(requestedHistoryId);
+	}
+
 	@Transactional
 	public void chargeComplete(ChargeCompleteCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())

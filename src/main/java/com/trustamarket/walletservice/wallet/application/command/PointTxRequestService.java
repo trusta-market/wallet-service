@@ -2,10 +2,10 @@ package com.trustamarket.walletservice.wallet.application.command;
 
 import java.util.UUID;
 
-import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawPointCommand;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
@@ -15,7 +15,9 @@ import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionR
 import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PointTxRequestService {
@@ -25,7 +27,10 @@ public class PointTxRequestService {
 	@Transactional // find와 save간의 transaction
 	public UUID withdrawPointRequest(WithdrawPointCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
-			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+			.orElseThrow(() -> {
+				log.error(String.valueOf(command.userId()));
+				return new WalletException(WalletErrorCode.WALLET_NOT_FOUND);
+			});
 
 		if (userWallet.isNotUser()) {
 			throw new WalletException(WalletErrorCode.SYSTEM_WALLET_WITHDRAWAL_NOT_ALLOWED);
