@@ -11,6 +11,9 @@ public record ChargePointCommand (
         if (userId == null) {
             throw new IllegalArgumentException("userId 값은 필수입니다.");
         }
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("idempotencyKey 값은 필수입니다.");
+        }
         if (chargeAmount <= 0) {
             throw new IllegalArgumentException("충전 금액은 1원 이상이어야 합니다.");
         }

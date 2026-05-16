@@ -122,10 +122,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Transactional
 	public ChargePointResult chargePoint(ChargePointCommand command) {
-		UUID requestedHistoryId = command.pointTxRequestHistoryId();
+		String idempotencyKey = command.idempotencyKey();
 
-		if (requestedHistoryId != null && isExistPointTxRequestHistory(requestedHistoryId)) {
-			throw new WalletException(ALREADY_EXISTS_POINT_TX_REQUEST);
+		Optional<PointTransactionRequestHistory> pointTxRequestHistory = idempotencyHandler.check(idempotencyKey);
+		if (pointTxRequestHistory.isPresent()) {
+			return new ChargePointResult(pointTxRequestHistory.get().getPointTxRequestHistoryId());
 		}
 
 		UUID historyId = pointTxRequestService.chargePointRequest(command);
