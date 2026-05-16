@@ -45,10 +45,13 @@ public class WalletController {
 	private final WalletQueryService walletQueryService;
 
 	@PostMapping("/charges")
-	public CommonResponse<ChargePointResponse> chargePoint(@Valid @RequestBody ChargePointRequest request){
+	public CommonResponse<ChargePointResponse> chargePoint(
+			@RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey,
+			@Valid @RequestBody ChargePointRequest request
+	){
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 
-		ChargePointCommand command = new ChargePointCommand(userId, request.pointTxRequestHistoryId(), request.chargeAmount());
+		ChargePointCommand command = new ChargePointCommand(userId, idempotencyKey, request.chargeAmount());
 		ChargePointResult result = walletCommandService.chargePoint(command);
 		ChargePointResponse response = ChargePointResponse.from(result);
 

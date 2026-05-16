@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public record ChargePointCommand (
     UUID userId,
-    UUID pointTxRequestHistoryId,
+    String idempotencyKey,
     long chargeAmount
 ) {
     public ChargePointCommand {
@@ -16,7 +16,7 @@ public record ChargePointCommand (
         }
     }
 
-    public static ChargePointCommand of(UUID userId, UUID pointTxHistoryId, long chargeAmount) {
-        return new ChargePointCommand(userId, pointTxHistoryId, chargeAmount);
+    public static ChargePointCommand of(UUID userId, String idempotencyKey, long chargeAmount) {
+        return new ChargePointCommand(userId, idempotencyKey, chargeAmount);
     }
 }
