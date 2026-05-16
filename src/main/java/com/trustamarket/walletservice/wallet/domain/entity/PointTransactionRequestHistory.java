@@ -52,7 +52,8 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 
 	public static PointTransactionRequestHistory paymentRequest(
 			Wallet wallet,
-			long requestPoint
+			long requestPoint,
+			String idempotencyKey
 	) {
 		if (wallet == null) {
 			throw new IllegalArgumentException("지갑은 필수");
@@ -66,6 +67,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 		pointTransactionRequestHistory.requestPoint = requestPoint;
 		pointTransactionRequestHistory.requestType = PointRequestType.CHARGE;
 		pointTransactionRequestHistory.status = PointRequestStatus.REQUESTED;
+		pointTransactionRequestHistory.idempotencyKey = idempotencyKey;
 
 		return pointTransactionRequestHistory;
 	}

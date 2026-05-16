@@ -112,7 +112,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		if (withdrawAmount != requestedAmount) {
 			throw new IllegalArgumentException("출금된 금액과 요청한 포인트가 다릅니다");
 		}
-		if(isEnough(withdrawAmount)) {
+		if(!isEnough(withdrawAmount)) {
 			throw new IllegalArgumentException("출금을 위한 잔액이 충분하지 않습니다.");
 		}
 

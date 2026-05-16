@@ -5,6 +5,5 @@ import jakarta.validation.constraints.Positive;
 import java.util.UUID;
 
 public record ChargePointRequest(
-        UUID pointTxRequestHistoryId,
         @Positive long chargeAmount
 ) {}
