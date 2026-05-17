@@ -5,9 +5,11 @@ import jakarta.persistence.Embeddable;
 @Embeddable
 record WalletPoint(long point) {
 	WalletPoint {
-		if (point < 0) {
-			throw new IllegalArgumentException("포인트는 0 이상이어야 함. point: " + point);
-		}
+		// todo: system point source는 음수 허용 이후 구조 고민 필요
+		// if (point < 0) {
+		// 	throw new IllegalArgumentException("포인트는 0 이상이어야 함. point: " + point);
+		// }
+
 	}
 
 	static WalletPoint of(long point) {
@@ -38,6 +40,13 @@ record WalletPoint(long point) {
 		}
 		if (this.point - amount < 0) {
 			throw new IllegalArgumentException("포인트 감소 불가능함 " + (this.point - amount));
+		}
+		return new WalletPoint(point - amount);
+	}
+
+	WalletPoint systemPointResourceDecrease(long amount) {
+		if (amount <= 0) {
+			throw new IllegalArgumentException("감소 금액은 0보다 커야함 " + amount);
 		}
 		return new WalletPoint(point - amount);
 	}

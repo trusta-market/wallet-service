@@ -1,11 +1,14 @@
 package com.trustamarket.walletservice.wallet.domain.enums;
 
 public enum PointTxType {
-	CHARGE(Direction.INCREASE),
 	BUYER_PAYMENT(Direction.DECREASE),
 	ESCROW_DEPOSIT(Direction.INCREASE),
 	REFUND(null),
+
+	CHARGE(Direction.INCREASE),
 	WITHDRAW(Direction.DECREASE),
+	POINT_SOURCE_IN(Direction.INCREASE),
+	POINT_SOURCE_OUT(Direction.DECREASE),
 
 	CANCEL_IN(Direction.INCREASE), // user
 	CANCEL_OUT(Direction.DECREASE), // system
