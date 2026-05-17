@@ -159,7 +159,11 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		}
 
 		long balanceBefore = this.balance.point();
-		this.balance = this.balance.decrease(amount);
+		if (txType == PointTxType.POINT_SOURCE_OUT) {
+			this.balance = this.balance.systemPointResourceDecrease(amount);
+		} else {
+			this.balance = this.balance.decrease(amount);
+		}
 
 		return PointTransaction.create(
 			this, balanceBefore, -amount, txType, refId, refType
