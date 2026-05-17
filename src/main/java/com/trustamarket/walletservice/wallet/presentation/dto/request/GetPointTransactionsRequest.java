@@ -22,7 +22,7 @@ public record GetPointTransactionsRequest(
 		to = getValidTo();
 		from = getValidFrom();
 
-		if (!from.isAfter(to)) {
+		if (from.isAfter(to)) {
 			throw new IllegalArgumentException("to가 더 최근이여야 함");
 		}
 		if(!isValidCursor()) {
