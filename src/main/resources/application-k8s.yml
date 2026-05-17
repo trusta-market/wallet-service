@@ -22,7 +22,8 @@ spring:
       discovery:
         enabled: false
   datasource:
-    url: jdbc:postgresql://postgres:5432/trusta_market
+    # DB_HOST env 로 endpoint 주입 (Secret domain-postgres-secrets). default = postgres (in-cluster fallback).
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/trusta_market
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     # HikariCP pool — default 10 이 thread 800 대비 너무 작아서 thread 가 pool 대기.
