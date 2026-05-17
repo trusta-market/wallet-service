@@ -35,7 +35,9 @@ import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
 import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WalletCommandServiceImpl implements WalletCommandService {
@@ -64,6 +66,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		Wallet wallet = Wallet.createUserWallet(userId);
 		walletRepository.save(wallet); //DataIntegrity exception은 RestControllerAdvice에서 처리
+		log.info(userId.toString());
 		return new CreateWalletResult(wallet.getWalletId(), true);
 	}
 
