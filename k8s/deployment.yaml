@@ -51,13 +51,16 @@ spec:
                 secretKeyRef:
                   name: domain-postgres-secrets
                   key: DB_PASSWORD
+          # request 는 실 사용량 기반 (CPU ~25m, memory ~400Mi, burst 여유 포함).
+          # limit 은 thread 800 stack (~800MB) + heap (limit*25%=500MB) + 기타 = ~1.5GB 안에 맞춤.
+          # request 줄임 → 노드당 pod 수 증가 → HPA scale 자리 확보 (e2-medium 4Gi 노드 기준 3 pod/노드).
           resources:
             requests:
-              cpu: 500m
-              memory: 2Gi
+              cpu: 100m
+              memory: 800Mi
             limits:
-              cpu: 1000m
-              memory: 2500Mi
+              cpu: 1500m
+              memory: 2Gi
           # startupProbe — /actuator/health/liveness (application 자체만).
           # /actuator/health (전체 합산) 는 외부 의존성 (Kafka 등) DOWN 시 503 → kill.
           startupProbe:
