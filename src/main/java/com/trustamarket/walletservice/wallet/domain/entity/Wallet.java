@@ -98,6 +98,9 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	}
 
 	public PointTransaction settleOut(long amount, UUID refId) {
+		if(!isEnough(amount)) {
+			throw new IllegalArgumentException("정산을 위한 잔액이 충분하지 않습니다.");
+		}
 		return decrease(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_OUT);
 	}
 
@@ -106,6 +109,9 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	}
 
 	public PointTransaction cancelOut(long amount, UUID refId) {
+		if(!isEnough(amount)) {
+			throw new IllegalArgumentException("취소를 위한 잔액이 충분하지 않습니다.");
+		}
 		return decrease(amount, refId, RefType.ORDER, PointTxType.CANCEL_OUT);
 	}
 
@@ -133,6 +139,7 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 	}
 
 	public PointTransaction decreasePointSource(long amount, UUID refId) {
+		//최종 잔액 음수 가능
 		return decrease(amount, refId, RefType.PAYMENT, PointTxType.POINT_SOURCE_OUT);
 	}
 
