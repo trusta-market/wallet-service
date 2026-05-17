@@ -1,5 +1,6 @@
 package com.trustamarket.walletservice.wallet.infrastructure.payment;
 
+import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.PaymentPointResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,7 +13,7 @@ import com.trustamarket.walletservice.wallet.infrastructure.payment.dto.Withdraw
 public interface PaymentFeignClient {
 
     @PostMapping("/payments/charges")
-    CommonResponse<Void> paymentPoint(
+    CommonResponse<PaymentPointResponse> paymentPoint(
             @RequestBody PaymentPointRequest request
     );
 
