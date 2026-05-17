@@ -129,16 +129,16 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		Optional<PointTransactionRequestHistory> pointTxRequestHistory = idempotencyHandler.check(idempotencyKey);
 		if (pointTxRequestHistory.isPresent()) {
-			return new ChargePointResult(pointTxRequestHistory.get().getPointTxRequestHistoryId());
+			throw new IllegalArgumentException("이미 요청된 충전입니다.");
 		}
 
 		UUID historyId = pointTxRequestService.chargePointRequest(command);
 
-		paymentPort.chargePoint(
+		ChargePointResult result = paymentPort.chargePoint(
 				command.userId(), historyId, command.chargeAmount()
 		);
 
-		return new ChargePointResult(historyId);
+		return result;
 	}
 
 	private boolean isExistPointTxRequestHistory(UUID requestedHistoryId){

@@ -5,6 +5,6 @@ import java.util.UUID;
 import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
 
 public interface PaymentPort {
-    void chargePoint(UUID userId, UUID pointTxRequestHistoryId, long chargeAmount);
+    ChargePointResult chargePoint(UUID userId, UUID pointTxRequestHistoryId, long chargeAmount);
     void withdrawPoint(UUID userId, UUID pointTxRequestHistoryId, long withdrawAmount);
 }
