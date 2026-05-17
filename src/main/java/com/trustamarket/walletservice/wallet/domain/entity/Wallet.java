@@ -84,6 +84,15 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		return wallet;
 	}
 
+	public static Wallet createSystemPointSourceWallet(UUID userId) {
+		Wallet wallet = new Wallet();
+		wallet.userId = userId;
+		wallet.balance = WalletPoint.of(0);
+		wallet.status = WalletStatus.ACTIVE;
+		wallet.walletType = WalletType.SYSTEM_POINT_SOURCE;
+		return wallet;
+	}
+
 	public PointTransaction settleIn(long amount, UUID refId) {
 		return increase(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_IN);
 	}
@@ -118,6 +127,15 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 
 		return decrease(withdrawAmount, refId, RefType.PAYMENT, PointTxType.WITHDRAW);
 	}
+
+	public PointTransaction increasePointSource(long amount, UUID refId) {
+		return increase(amount, refId, RefType.PAYMENT, PointTxType.POINT_SOURCE_IN);
+	}
+
+	public PointTransaction decreasePointSource(long amount, UUID refId) {
+		return decrease(amount, refId, RefType.PAYMENT, PointTxType.POINT_SOURCE_OUT);
+	}
+
 
 	public PointTransaction increase(long amount, UUID refId, RefType refType, PointTxType txType) {
 		validateActive();

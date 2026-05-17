@@ -1,9 +1,8 @@
 package com.trustamarket.walletservice.wallet.presentation.dto.response;
 
-import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
-
-import java.time.Instant;
 import java.util.UUID;
+
+import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
 
 public record ChargePointResponse (
         UUID pointTxRequestHistoryId

@@ -27,6 +27,9 @@ public class SystemWalletProvider {
 	public Wallet getFeeWallet() {
 		return getByType(WalletType.SYSTEM_FEE);
 	}
+	public Wallet getPointSourceWallet() {
+		return getByType(WalletType.SYSTEM_POINT_SOURCE);
+	}
 
 	private Wallet getByType(WalletType type) {
 		return walletRepository.findByWalletType(type)

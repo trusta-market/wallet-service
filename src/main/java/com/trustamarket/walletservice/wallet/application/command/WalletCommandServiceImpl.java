@@ -146,6 +146,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	public void chargeComplete(ChargeCompleteCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
 				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
+		Wallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
 
 		long chargeAmount = command.chargedAmount();
 		UUID refId = command.paymentId();
@@ -157,8 +158,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
 			pointTxRequestHistory.success();
 			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
+			PointTransaction pointSourceTx = systemPointSourceWallet.decreasePointSource(chargeAmount, refId);
 
 			walletRepository.save(userWallet);
+			walletRepository.save(systemPointSourceWallet);
+			pointTransactionRepository.save(pointSourceTx);
 			pointTransactionRepository.save(chargeTx);
 		} else {
 			pointTxRequestHistory.fail();
@@ -189,6 +193,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	public void withdrawComplete(WithdrawCompleteCommand command) {
 		Wallet userWallet = walletRepository.findByUserId(command.userId())
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
+		Wallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
 
 		long withdrawAmount = command.withdrawAmount();
 		UUID refId = command.paymentId();
@@ -201,9 +206,12 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			pointTxRequestHistory.success();
 			long requestedAmount = pointTxRequestHistory.getRequestPoint();
 			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
+			PointTransaction pointSourceTx = systemPointSourceWallet.increasePointSource(withdrawAmount, refId);
 
 			walletRepository.save(userWallet);
+			walletRepository.save(systemPointSourceWallet);
 			pointTransactionRepository.save(withdrawTx);
+			pointTransactionRepository.save(pointSourceTx);
 		} else {
 			pointTxRequestHistory.fail();
 		}
