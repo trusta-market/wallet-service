@@ -51,6 +51,12 @@ spec:
                 secretKeyRef:
                   name: domain-postgres-secrets
                   key: DB_PASSWORD
+            # DB_HOST — Cloud SQL Private IP (Secret 에서 주입). application-k8s.yml 의 ${DB_HOST:postgres} 와 대응.
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: domain-postgres-secrets
+                  key: DB_HOST
           # request 는 실 사용량 기반 (CPU ~25m, memory ~400Mi, burst 여유 포함).
           # limit 은 thread 800 stack (~800MB) + heap (limit*25%=500MB) + 기타 = ~1.5GB 안에 맞춤.
           # request 줄임 → 노드당 pod 수 증가 → HPA scale 자리 확보 (e2-medium 4Gi 노드 기준 3 pod/노드).
