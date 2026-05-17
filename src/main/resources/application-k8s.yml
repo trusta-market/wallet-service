@@ -32,12 +32,17 @@ spring:
       maximum-pool-size: 18
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         default_schema: p_wallet
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: p_wallet
+    liquibase-schema: p_wallet
   # Redis — K8s 환경 미사용. RedisAutoConfiguration 비활성 (캐싱 코드 있어도 startup OK).
   autoconfigure:
     exclude:

@@ -8,11 +8,12 @@ record BalanceChange (
 	long balanceAfter
 ) {
 	BalanceChange {
-		if (balanceAfter < 0) {
-			throw new IllegalArgumentException(
-				"변경 후 잔액은 0 이상이어야 함. " + balanceAfter
-			);
-		}
+		// todo: system point source는 음수 허용 이후 구조 고민 필요
+		// if (balanceAfter < 0) {
+		// 	throw new IllegalArgumentException(
+		// 		"변경 후 잔액은 0 이상이어야 함. " + balanceAfter
+		// 	);
+		// }
 	}
 
 	static BalanceChange of(long balanceBefore, long amount) {

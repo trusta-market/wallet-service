@@ -84,6 +84,15 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		return wallet;
 	}
 
+	public static Wallet createSystemPointSourceWallet(UUID userId) {
+		Wallet wallet = new Wallet();
+		wallet.userId = userId;
+		wallet.balance = WalletPoint.of(0);
+		wallet.status = WalletStatus.ACTIVE;
+		wallet.walletType = WalletType.SYSTEM_POINT_SOURCE;
+		return wallet;
+	}
+
 	public PointTransaction settleIn(long amount, UUID refId) {
 		return increase(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_IN);
 	}
@@ -112,12 +121,21 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		if (withdrawAmount != requestedAmount) {
 			throw new IllegalArgumentException("출금된 금액과 요청한 포인트가 다릅니다");
 		}
-		if(isEnough(withdrawAmount)) {
+		if(!isEnough(withdrawAmount)) {
 			throw new IllegalArgumentException("출금을 위한 잔액이 충분하지 않습니다.");
 		}
 
 		return decrease(withdrawAmount, refId, RefType.PAYMENT, PointTxType.WITHDRAW);
 	}
+
+	public PointTransaction increasePointSource(long amount, UUID refId) {
+		return increase(amount, refId, RefType.PAYMENT, PointTxType.POINT_SOURCE_IN);
+	}
+
+	public PointTransaction decreasePointSource(long amount, UUID refId) {
+		return decrease(amount, refId, RefType.PAYMENT, PointTxType.POINT_SOURCE_OUT);
+	}
+
 
 	public PointTransaction increase(long amount, UUID refId, RefType refType, PointTxType txType) {
 		validateActive();
@@ -141,7 +159,11 @@ public class Wallet { //createdAt, updatedAt baseEntity 상속
 		}
 
 		long balanceBefore = this.balance.point();
-		this.balance = this.balance.decrease(amount);
+		if (txType == PointTxType.POINT_SOURCE_OUT) {
+			this.balance = this.balance.systemPointResourceDecrease(amount);
+		} else {
+			this.balance = this.balance.decrease(amount);
+		}
 
 		return PointTransaction.create(
 			this, balanceBefore, -amount, txType, refId, refType
