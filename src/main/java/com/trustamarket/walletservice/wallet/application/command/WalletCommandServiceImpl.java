@@ -123,7 +123,6 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 	}
 
-	@Transactional
 	public ChargePointResult chargePoint(ChargePointCommand command) {
 		String idempotencyKey = command.idempotencyKey();
 
@@ -198,12 +197,12 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 		Wallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
 
-		long withdrawAmount = command.withdrawAmount();
-		UUID refId = command.paymentId();
-
 		PointTransactionRequestHistory pointTxRequestHistory =
 			pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
 				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
+
+		long withdrawAmount = command.withdrawAmount();
+		UUID refId = command.paymentId();
 
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
 			pointTxRequestHistory.success();
