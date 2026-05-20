@@ -13,6 +13,8 @@ spring:
 trusta:
   security:
     trust-gateway-headers: true
+  swagger:
+    expose-public: ${TRUSTA_SWAGGER_EXPOSE_PUBLIC:true}
 
 management:
   endpoint:
