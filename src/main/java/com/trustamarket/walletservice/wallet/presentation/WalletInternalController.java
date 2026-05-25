@@ -1,11 +1,11 @@
 package com.trustamarket.walletservice.wallet.presentation;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trustamarket.common.response.CommonResponse;
@@ -32,22 +32,22 @@ import lombok.RequiredArgsConstructor;
 public class WalletInternalController {
 	private final WalletCommandService walletCommandService;
 
-	@ResponseStatus(HttpStatus.CREATED)
 	@PostMapping
-	public CreateWalletResponse createWallet(@RequestBody CreateWalletRequest request) {
+	public ResponseEntity<CommonResponse<CreateWalletResponse>> createWallet(@RequestBody CreateWalletRequest request) {
 		CreateWalletResult createResult = walletCommandService.createWallet(request.userId());
-		return new CreateWalletResponse(createResult.result());
+		return ResponseEntity.status(HttpStatus.CREATED)
+			.body(CommonResponse.of(HttpStatus.CREATED.value(), new CreateWalletResponse(createResult.result())));
 	}
 
 	@PatchMapping("/usages")
-	public CommonResponse<UseWalletResponse> usePoint (@Valid @RequestBody UseWalletRequest request) {
+	public ResponseEntity<CommonResponse<UseWalletResponse>> usePoint (@Valid @RequestBody UseWalletRequest request) {
 		UseWalletResult result = walletCommandService.usePoint(new UseWalletCommand(request.orderId(), request.buyerId(), request.totalAmount()));
 		
-		return new CommonResponse(HttpStatus.OK.value(), new UseWalletResponse(result.balance(), result.shortage()));
+		return ResponseEntity.ok(CommonResponse.of(HttpStatus.OK.value(), new UseWalletResponse(result.balance(), result.shortage())));
 	}
 
 	@PostMapping("/charges")
-	public CommonResponse<Void> chargeComplete(@Valid @RequestBody ChargeCompleteRequest request){
+	public ResponseEntity<CommonResponse<Void>> chargeComplete(@Valid @RequestBody ChargeCompleteRequest request){
 		walletCommandService.chargeComplete(new ChargeCompleteCommand(
 				request.userId(),
 				request.paymentId(),
@@ -56,11 +56,12 @@ public class WalletInternalController {
 				request.chargeAmount()
 		));
 
-		return new CommonResponse(HttpStatus.NO_CONTENT.value(), null);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT)
+			.body(CommonResponse.of(HttpStatus.NO_CONTENT.value(), null));
 	}
 
 	@PostMapping("/withdrawals")
-	public CommonResponse<Void> withdrawComplete(@Valid @RequestBody WithdrawCompleteRequest request) {
+	public ResponseEntity<CommonResponse<Void>> withdrawComplete(@Valid @RequestBody WithdrawCompleteRequest request) {
 		walletCommandService.withdrawComplete(WithdrawCompleteCommand.of(
 			request.userId(),
 			request.payoutId(),
@@ -68,6 +69,7 @@ public class WalletInternalController {
 			PointRequestStatus.from(request.payoutStatus()),
 			request.payoutAmount()
 		));
-		return new CommonResponse<>(HttpStatus.NO_CONTENT.value(), null);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT)
+			.body(CommonResponse.of(HttpStatus.NO_CONTENT.value(), null));
 	}
 }
