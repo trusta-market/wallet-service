@@ -3,6 +3,7 @@ package com.trustamarket.walletservice.wallet.presentation;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -45,7 +46,7 @@ public class WalletController {
 	private final WalletQueryService walletQueryService;
 
 	@PostMapping("/charges")
-	public CommonResponse<ChargePointResponse> chargePoint(
+	public ResponseEntity<CommonResponse<ChargePointResponse>> chargePoint(
 			@RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey,
 			@Valid @RequestBody ChargePointRequest request
 	){
@@ -55,21 +56,23 @@ public class WalletController {
 		ChargePointResult result = walletCommandService.chargePoint(command);
 		ChargePointResponse response = ChargePointResponse.from(result);
 
-		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), response);
+		return ResponseEntity.status(HttpStatus.ACCEPTED)
+			.body(CommonResponse.of(HttpStatus.ACCEPTED.value(), response));
 	}
 
 	@PostMapping("/withdrawals")
-	public CommonResponse<WithdrawPointResponse> withdrawRequest(
+	public ResponseEntity<CommonResponse<WithdrawPointResponse>> withdrawRequest(
 			@RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey,
 			@Valid @RequestBody WithdrawPointRequest request) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		WithdrawPointResult result = walletCommandService.withdrawPoint(
 				WithdrawPointCommand.of(userId, idempotencyKey, request.withdrawAmount()));
-		return new CommonResponse<>(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result));
+		return ResponseEntity.status(HttpStatus.ACCEPTED)
+			.body(CommonResponse.of(HttpStatus.ACCEPTED.value(), WithdrawPointResponse.from(result)));
 	}
 
 	@GetMapping("/transactions")
-	public CommonResponse<GetPointTransactionPageResult> getPointTransactions(
+	public ResponseEntity<CommonResponse<GetPointTransactionPageResult>> getPointTransactions(
 			@Valid @ModelAttribute GetPointTransactionsRequest queryRequest) {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		GetPointTransactionPageResult result = walletQueryService.getPointTransactions(
@@ -78,23 +81,24 @@ public class WalletController {
 						queryRequest.getValidFrom(), queryRequest.getValidTo(),
 						queryRequest.cursorTime(), queryRequest.cursorId(),
 						queryRequest.size()));
-		return new CommonResponse<>(HttpStatus.OK.value(), result);
+		return ResponseEntity.ok(CommonResponse.of(HttpStatus.OK.value(), result));
 	}
 
 	@GetMapping("/balances")
-	public CommonResponse<Long> getPointBalance() {
+	public ResponseEntity<CommonResponse<Long>> getPointBalance() {
 		UUID userId = SecurityUtil.getCurrentUserIdOrThrow();
 		long balance = walletQueryService.getPoint(userId);
-		return new CommonResponse<>(HttpStatus.OK.value(), balance);
+		return ResponseEntity.ok(CommonResponse.of(HttpStatus.OK.value(), balance));
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/system")
-	public CommonResponse<CreateSystemWalletResponse> createSystemWallet(
+	public ResponseEntity<CommonResponse<CreateSystemWalletResponse>> createSystemWallet(
 			@Valid @RequestBody CreateSystemWalletRequest request) {
 		Wallet result = systemWalletService.createSystemWallet(
 				CreateSystemWalletDto.of(request.operatorId(), request.walletType()));
 
-		return new CommonResponse<>(HttpStatus.CREATED.value(), CreateSystemWalletResponse.from(result));
+		return ResponseEntity.status(HttpStatus.CREATED)
+			.body(CommonResponse.of(HttpStatus.CREATED.value(), CreateSystemWalletResponse.from(result)));
 	}
 }
