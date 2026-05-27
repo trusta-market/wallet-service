@@ -1,27 +1,11 @@
 spring:
   application:
     name: wallet-service
-
   profiles:
-    active: ${PROFILE}
-  
-  jpa:
-    properties:
-      hibernate:
-        default_schema: p_wallet
-        
-trusta:
-  security:
-    trust-gateway-headers: true
-  swagger:
-    expose-public: ${TRUSTA_SWAGGER_EXPOSE_PUBLIC:true}
-
-management:
-  endpoint:
-    health:
-      probes:
-        enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: health, info, prometheus
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://localhost:8888}
+  cloud:
+    config:
+      label: ${SPRING_CLOUD_CONFIG_LABEL:develop}
+      fail-fast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:false}
