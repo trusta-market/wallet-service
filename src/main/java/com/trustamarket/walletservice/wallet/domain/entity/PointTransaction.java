@@ -11,12 +11,9 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -42,9 +39,12 @@ public class PointTransaction extends BaseCreatedEntity {
 	@Getter
 	private UUID pointTransactionId;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "wallet_id", nullable = false)
-	private Wallet wallet;
+	// @ManyToOne(fetch = FetchType.LAZY)
+	// @JoinColumn(name = "wallet_id", nullable = false)
+	// private Wallet wallet; -> wallet 종류 나누며 테이블 분리로 fk 불가능
+
+	@Column(name = "wallet_id", nullable = false)
+	private UUID walletId;
 
 	@Embedded
 	private Reference ref;
@@ -58,14 +58,14 @@ public class PointTransaction extends BaseCreatedEntity {
 	private PointTxType pointTxType;
 
 	public static PointTransaction create(
-		Wallet wallet,
+		UUID walletId,
 		long balanceBefore,
 		long changedBalance,
 		PointTxType pointTxType,
 		UUID refId,
 		RefType refType
 	) {
-		if (wallet == null) {
+		if (walletId == null) {
 			throw new IllegalArgumentException("지갑은 필수");
 		}
 		if (pointTxType == null) {
@@ -74,7 +74,7 @@ public class PointTransaction extends BaseCreatedEntity {
 		validateTypeAndAmount(pointTxType, changedBalance);
 
 		PointTransaction tx = new PointTransaction();
-		tx.wallet = wallet;
+		tx.walletId = walletId;
 		tx.balanceChange = BalanceChange.of(balanceBefore, changedBalance);
 		tx.pointTxType = pointTxType;
 		tx.ref = Reference.of(refId, refType);

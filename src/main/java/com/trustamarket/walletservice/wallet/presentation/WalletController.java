@@ -25,7 +25,7 @@ import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointR
 import com.trustamarket.walletservice.wallet.application.dto.result.GetPointTransactionPageResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.WithdrawPointResult;
 import com.trustamarket.walletservice.wallet.application.query.WalletQueryService;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.ChargePointRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.CreateSystemWalletRequest;
 import com.trustamarket.walletservice.wallet.presentation.dto.request.GetPointTransactionsRequest;
@@ -95,8 +95,8 @@ public class WalletController {
 	@PostMapping("/system")
 	public ResponseEntity<CommonResponse<CreateSystemWalletResponse>> createSystemWallet(
 			@Valid @RequestBody CreateSystemWalletRequest request) {
-		Wallet result = systemWalletService.createSystemWallet(
-				CreateSystemWalletDto.of(request.operatorId(), request.walletType()));
+		SystemWallet result = systemWalletService.createSystemWallet(
+				CreateSystemWalletDto.of(request.operatorId(), request.systemWalletType()));
 
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(CommonResponse.of(HttpStatus.CREATED.value(), CreateSystemWalletResponse.from(result)));

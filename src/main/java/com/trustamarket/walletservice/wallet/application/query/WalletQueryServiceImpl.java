@@ -17,18 +17,18 @@ import com.trustamarket.walletservice.wallet.application.dto.result.GetPointTran
 import com.trustamarket.walletservice.wallet.application.dto.result.GetPointUsageResult;
 import com.trustamarket.walletservice.wallet.domain.entity.PointShortage;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointShortageRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
 public class WalletQueryServiceImpl implements WalletQueryService{
-	private final WalletRepository walletRepository;
+	private final UserWalletRepository userwalletRepository;
 	private final PointTransactionRepository pointTransactionRepository;
 	private final PointShortageRepository pointShortageRepository;
 
@@ -36,10 +36,10 @@ public class WalletQueryServiceImpl implements WalletQueryService{
 
 	@Transactional(readOnly = true)
 	public long getPoint(UUID userId) {
-		Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(
+		UserWallet userWallet = userwalletRepository.findByUserId(userId).orElseThrow(
 			() -> new WalletException(WALLET_NOT_FOUND)
 		); // 추후 findAllByUserId 고려
-		return wallet.checkBalance();
+		return userWallet.checkBalance();
 	}
 
 	@Transactional(readOnly = true)
@@ -70,7 +70,7 @@ public class WalletQueryServiceImpl implements WalletQueryService{
 
 	@Transactional(readOnly = true)
 	public GetPointTransactionPageResult getPointTransactions(UUID userId, GetPointTransactionQuery query) {
-		Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(
+		UserWallet wallet = userwalletRepository.findByUserId(userId).orElseThrow(
 			() -> new WalletException(WALLET_NOT_FOUND)
 		);
 		UUID walletId = wallet.getWalletId();
