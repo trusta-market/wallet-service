@@ -18,9 +18,9 @@ import com.trustamarket.walletservice.wallet.application.dto.query.GetPointTrans
 import com.trustamarket.walletservice.wallet.application.dto.result.GetPointTransactionPageResult;
 import com.trustamarket.walletservice.wallet.application.query.WalletQueryService;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 
 import jakarta.persistence.EntityManager;
 
@@ -32,7 +32,7 @@ class PointTransactionQueryServiceIntegrationTest {
 	@Autowired
 	private WalletQueryService walletQueryService;
 	@Autowired
-	private WalletRepository walletRepository;
+	private UserWalletRepository walletRepository;
 	@Autowired
 	private PointTransactionRepository pointTransactionRepository;
 	@Autowired private EntityManager entityManager;
@@ -46,7 +46,7 @@ class PointTransactionQueryServiceIntegrationTest {
 	@DisplayName("연속된 거래가 페이지 경계에 걸쳐도 중복 없이 조회 test")
 	void consecutiveTransactions_noDuplicationAcrossPages() {
 		UUID userId = UUID.randomUUID();
-		Wallet wallet = walletRepository.save(Wallet.createUserWallet(userId));
+		UserWallet wallet = walletRepository.save(UserWallet.createUserWallet(userId));
 
 		// 거래 5개 저장 (createdAt은 자동으로 현재 시각으로 찍힘)
 		Set<UUID> createdIds = new HashSet<>();

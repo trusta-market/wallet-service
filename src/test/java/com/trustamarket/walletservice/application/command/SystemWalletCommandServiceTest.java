@@ -18,15 +18,15 @@ import static org.mockito.Mockito.*;
 import com.trustamarket.walletservice.wallet.application.command.SystemWalletCommandService;
 import com.trustamarket.walletservice.wallet.application.creator.SystemWalletCreator;
 import com.trustamarket.walletservice.wallet.application.dto.creator.CreateSystemWalletDto;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
-import com.trustamarket.walletservice.wallet.domain.enums.WalletType;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.enums.SystemWalletType;
+import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
 
 @ExtendWith(MockitoExtension.class)
 class SystemWalletCommandServiceTest {
 
 	@Mock
-	private WalletRepository walletRepository;
+	private SystemWalletRepository walletRepository;
 
 	@Mock
 	private SystemWalletCreator escrowCreator;
@@ -38,8 +38,8 @@ class SystemWalletCommandServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		when(escrowCreator.getType()).thenReturn(WalletType.SYSTEM_ESCROW);
-		when(feeCreator.getType()).thenReturn(WalletType.SYSTEM_FEE);
+		when(escrowCreator.getType()).thenReturn(SystemWalletType.SYSTEM_ESCROW);
+		when(feeCreator.getType()).thenReturn(SystemWalletType.SYSTEM_FEE);
 
 		systemWalletService = new SystemWalletCommandService(
 			List.of(escrowCreator, feeCreator),
@@ -53,20 +53,20 @@ class SystemWalletCommandServiceTest {
 		// given
 		UUID operatorId = UUID.randomUUID();
 		CreateSystemWalletDto dto = CreateSystemWalletDto.of(
-			operatorId, WalletType.SYSTEM_ESCROW
+			operatorId, SystemWalletType.SYSTEM_ESCROW
 		);
-		Wallet expectedWallet = Wallet.createSystemWallet(operatorId);
+		SystemWallet expectedWallet = SystemWallet.createSystemWallet(operatorId);
 
 		given(escrowCreator.create(operatorId)).willReturn(expectedWallet);
 		given(walletRepository.save(expectedWallet)).willReturn(expectedWallet);
 
 		// when
-		Wallet result = systemWalletService.createSystemWallet(dto);
+		SystemWallet result = systemWalletService.createSystemWallet(dto);
 
 		// then
 		assertThat(result).isEqualTo(expectedWallet);
 		verify(escrowCreator).create(operatorId);
-		verify(feeCreator, never()).create(any());   // 다른 creator는 호출 안 됨
+		verify(feeCreator, never()).create(any());
 		verify(walletRepository).save(expectedWallet);
 	}
 
@@ -76,15 +76,15 @@ class SystemWalletCommandServiceTest {
 		// given
 		UUID operatorId = UUID.randomUUID();
 		CreateSystemWalletDto dto = CreateSystemWalletDto.of(
-			operatorId, WalletType.SYSTEM_FEE
+			operatorId, SystemWalletType.SYSTEM_FEE
 		);
-		Wallet expectedWallet = Wallet.createSystemFeeWallet(operatorId);
+		SystemWallet expectedWallet = SystemWallet.createSystemFeeWallet(operatorId);
 
 		given(feeCreator.create(operatorId)).willReturn(expectedWallet);
 		given(walletRepository.save(expectedWallet)).willReturn(expectedWallet);
 
 		// when
-		Wallet result = systemWalletService.createSystemWallet(dto);
+		SystemWallet result = systemWalletService.createSystemWallet(dto);
 
 		// then
 		assertThat(result).isEqualTo(expectedWallet);

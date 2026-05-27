@@ -14,8 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.trustamarket.walletservice.wallet.application.command.PointTxRequestService;
+import com.trustamarket.walletservice.wallet.application.command.SystemWalletProvider;
 import com.trustamarket.walletservice.wallet.application.command.WalletCommandServiceImpl;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawPointCommand;
@@ -23,18 +25,22 @@ import com.trustamarket.walletservice.wallet.application.dto.result.WithdrawPoin
 import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
 
 @ExtendWith(MockitoExtension.class)
 class WalletCommandWithdrawServiceTest {
 
-	@Mock private WalletRepository walletRepository;
+	@Mock private UserWalletRepository userWalletRepository;
+	@Mock private SystemWalletRepository systemWalletRepository;
+	@Mock private SystemWalletProvider systemWalletProvider;
 	@Mock private PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
 	@Mock private PointTransactionRepository pointTransactionRepository;
 	@Mock private PaymentPort paymentPort;
@@ -46,13 +52,14 @@ class WalletCommandWithdrawServiceTest {
 
 	private UUID userId;
 	private UUID refId;
-	private Wallet wallet;
+	private UserWallet wallet;
 
 	@BeforeEach
 	void setUp() {
 		userId = UUID.randomUUID();
 		refId = UUID.randomUUID();
-		wallet = Wallet.createUserWallet(userId);
+		wallet = UserWallet.createUserWallet(userId);
+		ReflectionTestUtils.setField(wallet, "walletId", UUID.randomUUID());
 		wallet.chargeComplete(100000L, refId);
 	}
 
@@ -164,11 +171,16 @@ class WalletCommandWithdrawServiceTest {
 		PointTransactionRequestHistory history = mock(PointTransactionRequestHistory.class);
 		given(history.getRequestPoint()).willReturn(requestedAmount);
 
-		Wallet walletSpy = spy(wallet);
+		SystemWallet systemPointSourceWallet = mock(SystemWallet.class);
+		PointTransaction pointSourceTx = mock(PointTransaction.class);
+		given(systemWalletProvider.getPointSourceWallet()).willReturn(systemPointSourceWallet);
+		given(systemPointSourceWallet.increasePointSource(actualAmount, paymentId)).willReturn(pointSourceTx);
+
+		UserWallet walletSpy = spy(wallet);
 		PointTransaction withdrawTx = mock(PointTransaction.class);
 		doReturn(withdrawTx).when(walletSpy).withdraw(requestedAmount, actualAmount, paymentId);
 
-		given(walletRepository.findByUserId(userId)).willReturn(Optional.of(walletSpy));
+		given(userWalletRepository.findByUserId(userId)).willReturn(Optional.of(walletSpy));
 		given(pointTxRequestHistoryRepository.findById(historyId)).willReturn(Optional.of(history));
 
 		WithdrawCompleteCommand command = new WithdrawCompleteCommand(
@@ -180,8 +192,10 @@ class WalletCommandWithdrawServiceTest {
 
 		// then
 		verify(walletSpy).withdraw(requestedAmount, actualAmount, paymentId);
-		verify(walletRepository).save(walletSpy);
+		verify(userWalletRepository).save(walletSpy);
+		verify(systemWalletRepository).save(systemPointSourceWallet);
 		verify(pointTransactionRepository).save(withdrawTx);
+		verify(pointTransactionRepository).save(pointSourceTx);
 		verify(history).success();
 		verify(pointTxRequestHistoryRepository).save(history);
 	}
@@ -194,16 +208,16 @@ class WalletCommandWithdrawServiceTest {
 		String idempotencyKey = UUID.randomUUID().toString();
 		long requestedAmount = 10000L;
 
-		Wallet wallet = mock(Wallet.class);
-		given(wallet.checkBalance()).willReturn(1000000L);
+		UserWallet mockWallet = mock(UserWallet.class);
+		given(mockWallet.checkBalance()).willReturn(1000000L);
 
 		PointTransactionRequestHistory history =
-			PointTransactionRequestHistory.payoutRequest(wallet, requestedAmount, idempotencyKey);
+			PointTransactionRequestHistory.payoutRequest(mockWallet, requestedAmount, idempotencyKey);
 
+		given(systemWalletProvider.getPointSourceWallet()).willReturn(mock(SystemWallet.class));
 		given(pointTxRequestHistoryRepository.findById(historyId))
 			.willReturn(Optional.of(history));
-		given(walletRepository.findByUserId(userId)).willReturn(Optional.of(wallet));
-
+		given(userWalletRepository.findByUserId(userId)).willReturn(Optional.of(mockWallet));
 
 		WithdrawCompleteCommand command = new WithdrawCompleteCommand(
 			userId, paymentId, historyId, PointRequestStatus.FAILED, 10000L
@@ -212,19 +226,15 @@ class WalletCommandWithdrawServiceTest {
 		walletWithdrawService.withdrawComplete(command);
 
 		// then
-		// 잔액이 그대로인지 -> 한 번도 불리지 않음
-		verify(wallet, never()).withdraw(anyLong(), anyLong(), any(UUID.class));
+		verify(mockWallet, never()).withdraw(anyLong(), anyLong(), any(UUID.class));
 
-		// history 상태가 FAILED
 		assertThat(history.getRequestPoint()).isEqualTo(requestedAmount);
 		assertThat(history)
 			.extracting("status")
 			.isEqualTo(PointRequestStatus.FAILED);
 
 		verify(pointTransactionRepository, never()).save(any());
-
-		verify(walletRepository, never()).save(any());
-
+		verify(userWalletRepository, never()).save(any());
 		verify(pointTxRequestHistoryRepository).save(history);
 	}
 
@@ -233,7 +243,7 @@ class WalletCommandWithdrawServiceTest {
 	void withdrawComplete_walletNotFound_throwsException() {
 		// given
 		UUID historyId = UUID.randomUUID();
-		given(walletRepository.findByUserId(userId)).willReturn(Optional.empty());
+		given(userWalletRepository.findByUserId(userId)).willReturn(Optional.empty());
 
 		WithdrawCompleteCommand command = new WithdrawCompleteCommand(
 			userId, UUID.randomUUID(), historyId, PointRequestStatus.SUCCESS, 10000L
@@ -251,11 +261,12 @@ class WalletCommandWithdrawServiceTest {
 	void withdrawComplete_historyNotFound_throwsException() {
 		// given
 		UUID historyId = UUID.randomUUID();
-		given(walletRepository.findByUserId(userId)).willReturn(Optional.of(wallet));
+		given(systemWalletProvider.getPointSourceWallet()).willReturn(mock(SystemWallet.class));
+		given(userWalletRepository.findByUserId(userId)).willReturn(Optional.of(wallet));
 		given(pointTxRequestHistoryRepository.findById(historyId)).willReturn(Optional.empty());
 
 		WithdrawCompleteCommand command = new WithdrawCompleteCommand(
-			userId, UUID.randomUUID(), historyId,  PointRequestStatus.SUCCESS, 10000L
+			userId, UUID.randomUUID(), historyId, PointRequestStatus.SUCCESS, 10000L
 		);
 
 		// when & then
