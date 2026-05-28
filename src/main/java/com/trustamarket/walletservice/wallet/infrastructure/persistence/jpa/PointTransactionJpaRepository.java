@@ -16,7 +16,7 @@ import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 public interface PointTransactionJpaRepository extends JpaRepository<PointTransaction, UUID> {
 	@Query("""
 		SELECT t FROM PointTransaction t
-		WHERE t.wallet.walletId = :walletId
+		WHERE t.walletId = :walletId
 		  AND t.createdAt >= :from
 		  AND t.createdAt <= :to
 		ORDER BY t.createdAt DESC, t.pointTransactionId DESC
@@ -30,7 +30,7 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
 
 	@Query("""
 		SELECT t FROM PointTransaction t
-		WHERE t.wallet.walletId = :walletId
+		WHERE t.walletId = :walletId
 		  AND t.createdAt >= :from
 		  AND t.createdAt <= :to
 		  AND (t.createdAt < :cursorTime
@@ -56,7 +56,7 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
 	@Query("""
     SELECT pt FROM PointTransaction pt
     WHERE pt.ref.refId = :orderId
-      AND pt.wallet.walletId = :walletId
+      AND pt.walletId = :walletId
       AND pt.pointTxType = :pointTxType
     """)
 	Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(@Param("orderId") UUID orderId, @Param("walletId") UUID walletId, @Param("pointTxType")PointTxType pointTxType);
