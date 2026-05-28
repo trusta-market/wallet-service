@@ -46,14 +46,14 @@ WHERE wallet_type != 'USER';
 -- p_point_transaction_request_history FK를 p_user_wallets로 교체
 -- 요청 이력(충전·출금 요청)은 항상 유저 지갑에서만 발생하므로 참조 대상을 명확히 함
 ALTER TABLE p_point_transaction_request_history
-    DROP CONSTRAINT fk_point_tx_req_wallet,
+    DROP CONSTRAINT IF EXISTS fk_point_tx_req_wallet,
     ADD CONSTRAINT fk_ptxreq_user_wallet FOREIGN KEY (wallet_id) REFERENCES p_user_wallets (wallet_id);
 
 --changeset ihyein:6
 -- p_point_transactions FK 제거
 -- PointTransaction은 UserWallet·SystemWallet 둘 다 참조하므로 DB FK 대신 UUID로만 관리
 ALTER TABLE p_point_transactions
-    DROP CONSTRAINT fk_point_tx_wallet;
+    DROP CONSTRAINT IF EXISTS fk_point_tx_wallet;
 
 --changeset ihyein:7
-DROP TABLE IF EXISTS p_wallets;
+DROP TABLE IF EXISTS p_wallets CASCADE;
