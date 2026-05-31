@@ -120,15 +120,20 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			return UseWalletResult.insufficient(currentBalance, shortage);
 		}
 
-		SystemWallet systemEscrow = systemWalletProvider.getEscrowWallet();
-
-		//같은 orderId로 왔는지 확인하기
-
 		PointTransaction userTx = buyerWallet.decrease(
 			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.BUYER_PAYMENT
 		);
-		PointTransaction escrowTx = systemEscrow.increase(
-			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.ESCROW_DEPOSIT
+		userWalletRepository.save(buyerWallet);
+
+		//system wallet은 원자적 update로 save 필요 없음
+		SystemWallet systemEscrow = systemWalletProvider.getEscrowWallet(); // pre-SELECT (walletId)
+		systemWalletRepository.increaseBalance(systemEscrow.getWalletId(), command.totalAmount());
+		SystemWallet updatedEscrow = systemWalletProvider.getEscrowWallet();         // post-SELECT (balanceAfter)
+		long escrowBalanceBefore = updatedEscrow.checkBalance() - command.totalAmount();
+
+		PointTransaction escrowTx = PointTransaction.create(
+			systemEscrow.getWalletId(), escrowBalanceBefore, command.totalAmount(),
+			PointTxType.ESCROW_DEPOSIT, command.orderId(), RefType.ORDER
 		);
 
 		attempt.success();
@@ -151,15 +156,29 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 
 		List<PointTransaction> transactions = new ArrayList<>();
-		System.out.println(totalAmount);
-		transactions.add(escrowWallet.settleOut(totalAmount, orderId));
-
 		if (sellerAmount > 0) {
 			transactions.add(sellerWallet.settleIn(sellerAmount, orderId));
+			userWalletRepository.save(sellerWallet);
 		}
 
+		int affected = systemWalletRepository.decreaseBalanceIfSufficient(escrowWallet.getWalletId(), totalAmount);
+		if (affected == 0) {
+			throw new IllegalArgumentException("정산을 위한 잔액이 충분하지 않습니다.");
+		}
+		SystemWallet updatedEscrow = systemWalletProvider.getEscrowWallet();
+		long escrowBalanceBefore = updatedEscrow.checkBalance() + totalAmount;
+		transactions.add(PointTransaction.create(escrowWallet.getWalletId(), escrowBalanceBefore, -totalAmount,
+			PointTxType.SETTLEMENT_OUT, orderId, RefType.ORDER));
+		System.out.println(totalAmount);
+
+
+
 		if (feeAmount > 0) {
-			transactions.add(feeWallet.increaseFeeRevenue(feeAmount, orderId));
+			systemWalletRepository.increaseBalance(feeWallet.getWalletId(), feeAmount);
+			SystemWallet updatedFee = systemWalletProvider.getFeeWallet();
+			long feeBalanceBefore =  updatedFee.checkBalance() - feeAmount;
+			transactions.add(PointTransaction.create(feeWallet.getWalletId(), feeBalanceBefore, feeAmount,
+				PointTxType.FEE_REVENUE, orderId,RefType.ORDER));
 		}
 
 		if (!transactions.isEmpty()) {
@@ -190,7 +209,6 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	public void chargeComplete(ChargeCompleteCommand command) {
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
 				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
-		SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
 
 		long chargeAmount = command.chargedAmount();
 		UUID refId = command.paymentId();
@@ -202,17 +220,23 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
 			pointTxRequestHistory.success();
 			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
-			PointTransaction pointSourceTx = systemPointSourceWallet.decreasePointSource(chargeAmount, refId);
 
+			//DB에서 로드한 객체는 clearAutomatically로 인해 1차 캐시에서 지워지기 전 save
 			userWalletRepository.save(userWallet);
-			systemWalletRepository.save(systemPointSourceWallet);
-			pointTransactionRepository.save(pointSourceTx);
+			pointTxRequestHistoryRepository.save(pointTxRequestHistory);
+
+			SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
+			systemWalletRepository.decreaseBalanceUnchecked(systemPointSourceWallet.getWalletId(), chargeAmount); // 이 이후로는 DB row락 걸림 (update했으니까)
+			SystemWallet updatedPointSource = systemWalletProvider.getPointSourceWallet();
+			long pointSourceBalanceBefore = updatedPointSource.checkBalance() + chargeAmount;
+			PointTransaction pointSourceTx = PointTransaction.create(systemPointSourceWallet.getWalletId(), pointSourceBalanceBefore, -chargeAmount,
+				PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
 			pointTransactionRepository.save(chargeTx);
+			pointTransactionRepository.save(pointSourceTx);
 		} else {
 			pointTxRequestHistory.fail();
+			pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 		}
-
-		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 	}
 
 	@Observed(name = "wallet.withdraw-point")
@@ -239,7 +263,6 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	public void withdrawComplete(WithdrawCompleteCommand command) {
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
-		SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
 
 		PointTransactionRequestHistory pointTxRequestHistory =
 			pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
@@ -250,18 +273,23 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
 			pointTxRequestHistory.success();
-			long requestedAmount = pointTxRequestHistory.getRequestPoint();
-			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
-			PointTransaction pointSourceTx = systemPointSourceWallet.increasePointSource(withdrawAmount, refId);
+			pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 
+			long requestedAmount = pointTxRequestHistory.getRequestPoint();
+			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId); // 출금된 금액과 요청한 포인트 다른지 확인하고 있음
 			userWalletRepository.save(userWallet);
-			systemWalletRepository.save(systemPointSourceWallet);
+
+			SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
+			systemWalletRepository.increaseBalance(systemPointSourceWallet.getWalletId(), withdrawAmount);
+			SystemWallet updatedSystemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
+			long beforeWithdraw = updatedSystemPointSourceWallet.checkBalance() - requestedAmount;
+			PointTransaction pointSourceTx = PointTransaction.create(systemPointSourceWallet.getWalletId(), beforeWithdraw, withdrawAmount,
+				PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);
 			pointTransactionRepository.save(withdrawTx);
 			pointTransactionRepository.save(pointSourceTx);
 		} else {
 			pointTxRequestHistory.fail();
+			pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 		}
-
-		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 	}
 }
