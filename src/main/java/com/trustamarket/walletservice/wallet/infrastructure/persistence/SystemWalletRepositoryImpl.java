@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.infrastructure.persistence;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
@@ -29,5 +30,20 @@ public class SystemWalletRepositoryImpl implements SystemWalletRepository {
 	@Override
 	public Optional<SystemWallet> findBySystemWalletType(SystemWalletType walletType) {
 		return walletJpaRepository.findBySystemWalletType(walletType);
+	}
+
+	@Override
+	public void increaseBalance(UUID walletId, long amount) {
+		walletJpaRepository.increaseBalance(walletId, amount);
+	}
+
+	@Override
+	public int decreaseBalanceIfSufficient(UUID walletId, long amount) {
+		return walletJpaRepository.decreaseBalanceIfSufficient(walletId, amount);
+	}
+
+	@Override
+	public void decreaseBalanceUnchecked(UUID walletId, long amount) {
+		walletJpaRepository.decreaseBalanceUnchecked(walletId, amount);
 	}
 }
