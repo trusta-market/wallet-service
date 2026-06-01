@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.infrastructure.persistence;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
@@ -19,6 +20,11 @@ public class SystemWalletRepositoryImpl implements SystemWalletRepository {
 
 	public SystemWallet save(SystemWallet wallet) {
 		return walletJpaRepository.save(wallet);
+	}
+
+	@Override
+	public Optional<SystemWallet> findById(UUID walletId) {
+		return walletJpaRepository.findById(walletId);
 	}
 
 	@Override

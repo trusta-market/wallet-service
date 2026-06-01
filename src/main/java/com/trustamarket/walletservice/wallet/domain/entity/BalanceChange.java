@@ -5,7 +5,7 @@ import jakarta.persistence.Embeddable;
 @Embeddable
 record BalanceChange (
 	long amount,
-	long balanceAfter
+	Long balanceAfter
 ) {
 	BalanceChange {
 		// todo: system point source는 음수 허용 이후 구조 고민 필요
@@ -23,5 +23,9 @@ record BalanceChange (
 		} catch (ArithmeticException e) {
 			throw new IllegalStateException("포인트 계산 중 오버플로우 발생");
 		}
+	}
+
+	static BalanceChange of(long amount) {
+		return new BalanceChange(amount, null);
 	}
 }

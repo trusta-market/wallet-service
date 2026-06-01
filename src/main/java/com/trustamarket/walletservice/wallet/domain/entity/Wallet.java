@@ -1,14 +1,9 @@
 package com.trustamarket.walletservice.wallet.domain.entity;
 
-import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
-
 import java.util.UUID;
 
 import com.trustamarket.common.domain.BaseTimeEntity;
-import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
-import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 import com.trustamarket.walletservice.wallet.domain.enums.WalletStatus;
-import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EnumType;
@@ -32,34 +27,7 @@ public abstract class Wallet extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	protected WalletStatus status;
 
-	public PointTransaction increase(long amount, UUID refId, RefType refType, PointTxType txType) {
-		validateActive();
-		if (amount <= 0) {
-			throw new IllegalArgumentException("충전 금액은 0보다 커야 합니다");
-		}
 
-		long balanceBefore = this.balance.point();
-		this.balance = this.balance.increase(amount);
-
-		return PointTransaction.create(
-			this.getWalletId(), balanceBefore, amount, txType, refId, refType
-		);
-	}
-
-	public PointTransaction decrease(long amount, UUID refId, RefType refType, PointTxType txType) {
-		validateActive();
-
-		if (amount <= 0) {
-			throw new WalletException(INVALID_DEDUCTION_AMOUNT);
-		}
-
-		long balanceBefore = this.balance.point();
-		this.balance = this.balance.decrease(amount);
-
-		return PointTransaction.create(
-			this.getWalletId(), balanceBefore, -amount, txType, refId, refType
-		);
-	}
 
 	protected void validateActive() {
 		if (status != WalletStatus.ACTIVE) {
