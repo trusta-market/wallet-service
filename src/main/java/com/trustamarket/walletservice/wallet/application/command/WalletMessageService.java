@@ -11,15 +11,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.trustamarket.walletservice.wallet.application.dto.event.CancelCompletedEvent;
+import com.trustamarket.walletservice.wallet.application.dto.event.SystemWalletOutboxEvent;
 import com.trustamarket.walletservice.wallet.application.dto.message.CancelMessage;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWalletOutbox;
 import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
+import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletOutboxRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class WalletMessageService implements WalletMessageUsecase {
 
 	private final UserWalletRepository userWalletRepository;
-	private final SystemWalletRepository systemWalletRepository;
+	private final SystemWalletOutboxRepository systemWalletOutboxRepository;
 	private final PointTransactionRepository pointTransactionRepository;
 	private final SystemWalletProvider systemWalletProvider;
 	private final ApplicationEventPublisher eventPublisher;
@@ -60,15 +63,17 @@ public class WalletMessageService implements WalletMessageUsecase {
 
 		SystemWallet escrowWallet = systemWalletProvider.getEscrowWallet();
 		PointTransaction pointUserCancelTx = userWallet.cancelIn(cancelledAmount, message.orderId());
-		PointTransaction pointEscrowCancelTx = escrowWallet.cancelOut(
+		PointTransaction pointEscrowCancelTx = escrowWallet.recordCancelOutTx(
 			cancelledAmount, orderId);
 
 		userWalletRepository.save(userWallet);
-		systemWalletRepository.save(escrowWallet);
 		pointTransactionRepository.saveAll(List.of(pointUserCancelTx, pointEscrowCancelTx));
 
-		CancelCompletedEvent cancelCompletedEvent = CancelCompletedEvent.of(orderId, cancelledAmount);
+		SystemWalletOutbox outbox= SystemWalletOutbox.create(escrowWallet.getWalletId(), -cancelledAmount, PointTxType.CANCEL_OUT, orderId, RefType.ORDER);
+		systemWalletOutboxRepository.save(outbox);
+		eventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
 
+		CancelCompletedEvent cancelCompletedEvent = CancelCompletedEvent.of(orderId, cancelledAmount);
 		eventPublisher.publishEvent(cancelCompletedEvent);
 	}
 }
