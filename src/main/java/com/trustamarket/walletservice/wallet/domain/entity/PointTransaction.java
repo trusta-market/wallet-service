@@ -1,5 +1,6 @@
 package com.trustamarket.walletservice.wallet.domain.entity;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.trustamarket.common.domain.BaseCreatedEntity;
@@ -57,6 +58,8 @@ public class PointTransaction extends BaseCreatedEntity {
 	@Column(name = "tx_type", nullable = false)
 	private PointTxType pointTxType;
 
+	private Instant processedAt;
+
 	public static PointTransaction create(
 		UUID walletId,
 		long balanceBefore,
@@ -76,6 +79,30 @@ public class PointTransaction extends BaseCreatedEntity {
 		PointTransaction tx = new PointTransaction();
 		tx.walletId = walletId;
 		tx.balanceChange = BalanceChange.of(balanceBefore, changedBalance);
+		tx.pointTxType = pointTxType;
+		tx.ref = Reference.of(refId, refType);
+		return tx;
+	}
+
+	// 주 트랜잭션용 — balance 건드리지 않고 PT만 생성
+	public static PointTransaction createSystemWalletTx(
+		UUID walletId,
+		long changedBalance,
+		PointTxType pointTxType,
+		UUID refId,
+		RefType refType
+	) {
+		if (walletId == null) {
+			throw new IllegalArgumentException("지갑은 필수");
+		}
+		if (pointTxType == null) {
+			throw new IllegalArgumentException("트랜잭션 타입은 필수");
+		}
+		validateTypeAndAmount(pointTxType, changedBalance);
+
+		PointTransaction tx = new PointTransaction();
+		tx.walletId = walletId;
+		tx.balanceChange = BalanceChange.of(changedBalance);
 		tx.pointTxType = pointTxType;
 		tx.ref = Reference.of(refId, refType);
 		return tx;

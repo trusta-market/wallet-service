@@ -1,14 +1,11 @@
 package com.trustamarket.walletservice.wallet.domain.entity;
 
-import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
-
 import java.util.UUID;
 
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 import com.trustamarket.walletservice.wallet.domain.enums.SystemWalletType;
 import com.trustamarket.walletservice.wallet.domain.enums.WalletStatus;
-import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -56,38 +53,42 @@ public class SystemWallet extends Wallet {
 		return wallet;
 	}
 
-	public PointTransaction settleOut(long amount, UUID refId) {
-		if(!isEnough(amount)) {
-			throw new IllegalArgumentException("정산을 위한 잔액이 충분하지 않습니다.");
-		}
-		return decrease(amount, refId, RefType.ORDER, PointTxType.SETTLEMENT_OUT);
+	public PointTransaction recordEscrowDepositPointTx(long amount, UUID refId) {
+		validateActive();
+		return PointTransaction.createSystemWalletTx(
+			this.getWalletId(), amount, PointTxType.ESCROW_DEPOSIT, refId, RefType.ORDER
+		);
 	}
 
-	public PointTransaction cancelOut(long amount, UUID refId) {
-		if(!isEnough(amount)) {
-			throw new IllegalArgumentException("취소를 위한 잔액이 충분하지 않습니다.");
-		}
-		return decrease(amount, refId, RefType.ORDER, PointTxType.CANCEL_OUT);
+	public PointTransaction recordSettleOutTx(long amount, UUID refId) {
+		validateActive();
+		return PointTransaction.createSystemWalletTx(this.getWalletId(), -amount, PointTxType.SETTLEMENT_OUT, refId, RefType.ORDER);
 	}
 
-	public PointTransaction increaseFeeRevenue(long amount, UUID refId) {
-		return increase(amount, refId, RefType.ORDER, PointTxType.FEE_REVENUE);
+	public PointTransaction recordCancelOutTx(long amount, UUID refId) {
+		validateActive();
+		return PointTransaction.createSystemWalletTx(this.getWalletId(), -amount, PointTxType.CANCEL_OUT, refId, RefType.ORDER);
 	}
 
-	public PointTransaction increasePointSource(long amount, UUID refId) {
-		return increase(amount, refId, RefType.PAYMENT, PointTxType.POINT_SOURCE_IN);
+	public PointTransaction recordIncreaseFeeRevenueTx(long amount, UUID refId) {
+		validateActive();
+		return PointTransaction.createSystemWalletTx(this.getWalletId(), amount, PointTxType.FEE_REVENUE, refId, RefType.ORDER);
 	}
 
-	public PointTransaction decreasePointSource(long amount, UUID refId) {
+	public PointTransaction recordIncreasePointSourceTx(long amount, UUID refId) {
+		validateActive();
+		return PointTransaction.createSystemWalletTx(this.getWalletId(), amount, PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);
+	}
+
+	public PointTransaction recordDecreasePointSourceTx(long amount, UUID refId) {
 		//최종 잔액 음수 가능
 		validateActive();
-		if (amount <= 0) {
-			throw new WalletException(INVALID_DEDUCTION_AMOUNT);
-		}
-		long balanceBefore = this.balance.point();
-		this.balance = this.balance.systemPointResourceDecrease(amount); // 음수 가능
-		return PointTransaction.create(
-			this.getWalletId(), balanceBefore, -amount, PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT
-		);
+		return PointTransaction.createSystemWalletTx(this.getWalletId(), -amount, PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
+	}
+
+	// outbox relay용 — PointTx 생성 없이 balance만 업데이트
+	public void applyBalanceDelta(long deltaAmount) {
+		validateActive();
+		this.balance = WalletPoint.of(this.balance.point() + deltaAmount);
 	}
 }
