@@ -1,13 +1,10 @@
 name: Build & Deploy wallet-service
+
 on:
   push:
     branches: [develop]
   workflow_dispatch:
-    inputs:
-      commit_sha:
-        description: 'Commit SHA to deploy (optional, defaults to branch HEAD)'
-        required: false
-        default: ''
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,13 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: "${{ inputs.commit_sha || github.ref }}"
-          fetch-depth: "${{ inputs.commit_sha != '' && '0' || '1' }}"
-
-      - name: Resolve deploy SHA
-        id: sha
-        run: echo "value=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Authenticate to GCP (WIF)
         uses: google-github-actions/auth@v2
@@ -44,7 +34,7 @@ jobs:
           docker build \
             --build-arg GPR_USER=${{ secrets.GPR_USER }} \
             --build-arg GPR_TOKEN=${{ secrets.GPR_TOKEN }} \
-            -t $IMAGE:${{ steps.sha.outputs.value }} -t $IMAGE:latest .
+            -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
 
       - name: Push image
         run: docker push --all-tags $IMAGE
@@ -56,7 +46,7 @@ jobs:
           location: asia-northeast3-a
 
       - name: Apply Deployment (with image tag substitution)
-        run: sed "s|PLACEHOLDER|${{ steps.sha.outputs.value }}|g" k8s/deployment.yaml | kubectl apply -f -
+        run: sed "s|PLACEHOLDER|${{ github.sha }}|g" k8s/deployment.yaml | kubectl apply -f -
 
       - name: Apply Service
         run: kubectl apply -f k8s/service.yaml
@@ -64,5 +54,6 @@ jobs:
       # HPA 비활성 (부하 측정 일관된 환경). 활성화 시 hpa.yaml 의 주석 풀고 아래도 풀기.
       # - name: Apply HPA
       #   run: kubectl apply -f k8s/hpa.yaml
+
       - name: Wait for rollout
         run: kubectl rollout status deployment/wallet-service --timeout=5m
