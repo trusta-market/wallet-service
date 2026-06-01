@@ -6,7 +6,7 @@ public record UseWalletCommand(
 	UUID idempotencyKey,
 	UUID orderId,
 	UUID buyerId,
-	Long totalAmount
+	Long orderTotalAmount
 ) {
 	public UseWalletCommand {
 		if (idempotencyKey == null) {
@@ -18,7 +18,7 @@ public record UseWalletCommand(
 		if (buyerId == null) {
 			throw new IllegalArgumentException("구매자 ID는 필수입니다.");
 		}
-		if (totalAmount == null || totalAmount <= 0) {
+		if (orderTotalAmount == null || orderTotalAmount <= 0) {
 			throw new IllegalArgumentException("결제 금액은 1원 이상이어야 합니다.");
 		}
 	}

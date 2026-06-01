@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import com.trustamarket.walletservice.wallet.application.dto.command.ChargePoint
 import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawPointCommand;
+import com.trustamarket.walletservice.wallet.application.dto.event.SystemWalletOutboxEvent;
 import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
@@ -26,6 +28,7 @@ import com.trustamarket.walletservice.wallet.domain.entity.PointShortage;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
 import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWalletOutbox;
 import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
@@ -35,7 +38,7 @@ import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletOutboxRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
 
@@ -48,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class WalletCommandServiceImpl implements WalletCommandService {
 
 	private final UserWalletRepository userWalletRepository;
-	private final SystemWalletRepository systemWalletRepository;
+	private final SystemWalletOutboxRepository systemWalletOutboxRepository;
 	private final SystemWalletProvider systemWalletProvider;
 	private final PaymentPort paymentPort;
 
@@ -57,6 +60,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	private final PointTxRequestService pointTxRequestService;
 	private final IdempotencyHandler idempotencyHandler;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	@Observed(name = "wallet.create-wallet")
 	@Transactional
@@ -109,12 +113,12 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		PointTransactionRequestHistory attempt =
 			PointTransactionRequestHistory.orderPaymentAttempt(
-				buyerWallet, command.totalAmount(), command.orderId(), idempotencyKey
+				buyerWallet, command.orderTotalAmount(), command.orderId(), idempotencyKey
 			);
 
 		long currentBalance = buyerWallet.checkBalance();
-		if (currentBalance < command.totalAmount()) {
-			long shortage = command.totalAmount() - currentBalance;
+		if (currentBalance < command.orderTotalAmount()) {
+			long shortage = command.orderTotalAmount() - currentBalance;
 			attempt.insufficient();
 			pointTxRequestHistoryRepository.save(attempt);
 			return UseWalletResult.insufficient(currentBalance, shortage);
@@ -124,18 +128,20 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		//같은 orderId로 왔는지 확인하기
 
-		PointTransaction userTx = buyerWallet.decrease(
-			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.BUYER_PAYMENT
-		);
-		PointTransaction escrowTx = systemEscrow.increase(
-			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.ESCROW_DEPOSIT
-		);
+		long orderTotalAmount = command.orderTotalAmount();
+		UUID refId = command.orderId();
+		PointTransaction userTx = buyerWallet.buyerPayment(orderTotalAmount, refId);
+		PointTransaction escrowTx = systemEscrow.recordEscrowDepositPointTx(orderTotalAmount, refId);
 
 		attempt.success();
 		pointTxRequestHistoryRepository.save(attempt);
 		userWalletRepository.save(buyerWallet);
-		systemWalletRepository.save(systemEscrow);
 		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));
+
+		SystemWalletOutbox outbox = SystemWalletOutbox.create(systemEscrow.getWalletId(), +orderTotalAmount,
+			PointTxType.ESCROW_DEPOSIT, refId, RefType.ORDER);
+		systemWalletOutboxRepository.save(outbox);
+		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
 
 		return UseWalletResult.success(buyerWallet.checkBalance());
 	}
@@ -143,28 +149,41 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	@Observed(name = "wallet.transfer-for-settlement")
 	@Override
 	@Transactional(propagation = Propagation.MANDATORY) // 부모 트랜잭션(정산)에 반드시 합류하도록 설정
-	public void transferForSettlement(UUID orderId, UUID sellerId, long totalAmount, long sellerAmount, long feeAmount) { // dto로 변경 예정
-
+	public void transferForSettlement(UUID orderId, UUID sellerId, long orderTotalAmount, long sellerAmount, long feeAmount) { // dto로 변경 예정
 		SystemWallet escrowWallet = systemWalletProvider.getEscrowWallet();
 		SystemWallet feeWallet = systemWalletProvider.getFeeWallet();
 		UserWallet sellerWallet = userWalletRepository.findByUserId(sellerId)
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 
 		List<PointTransaction> transactions = new ArrayList<>();
-		System.out.println(totalAmount);
-		transactions.add(escrowWallet.settleOut(totalAmount, orderId));
+		System.out.println(orderTotalAmount);
+		transactions.add(escrowWallet.recordSettleOutTx(orderTotalAmount, orderId));
 
 		if (sellerAmount > 0) {
 			transactions.add(sellerWallet.settleIn(sellerAmount, orderId));
+			userWalletRepository.save(sellerWallet);
 		}
 
 		if (feeAmount > 0) {
-			transactions.add(feeWallet.increaseFeeRevenue(feeAmount, orderId));
+			transactions.add(feeWallet.recordIncreaseFeeRevenueTx(feeAmount, orderId));
 		}
 
 		if (!transactions.isEmpty()) {
 			pointTransactionRepository.saveAll(transactions);
 		}
+
+		SystemWalletOutbox escrowOutbox = SystemWalletOutbox.create(
+			escrowWallet.getWalletId(), -orderTotalAmount, PointTxType.SETTLEMENT_OUT, orderId, RefType.ORDER
+		);
+		SystemWalletOutbox feeOutbox = SystemWalletOutbox.create(
+			feeWallet.getWalletId(), +feeAmount, PointTxType.FEE_REVENUE, orderId, RefType.ORDER
+		);
+		systemWalletOutboxRepository.save(escrowOutbox);
+		systemWalletOutboxRepository.save(feeOutbox);
+
+		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(escrowOutbox.getOutboxId()));
+		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(feeOutbox.getOutboxId()));
+
 	}
 
 	@Observed(name = "wallet.charge-point")
@@ -202,12 +221,17 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
 			pointTxRequestHistory.success();
 			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
-			PointTransaction pointSourceTx = systemPointSourceWallet.decreasePointSource(chargeAmount, refId);
+			PointTransaction pointSourceTx = systemPointSourceWallet.recordDecreasePointSourceTx(chargeAmount, refId);
 
 			userWalletRepository.save(userWallet);
-			systemWalletRepository.save(systemPointSourceWallet);
-			pointTransactionRepository.save(pointSourceTx);
 			pointTransactionRepository.save(chargeTx);
+
+			pointTransactionRepository.save(pointSourceTx);
+			SystemWalletOutbox outbox = SystemWalletOutbox.create(systemPointSourceWallet.getWalletId(), -chargeAmount,
+				PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
+			systemWalletOutboxRepository.save(outbox);
+
+			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
 		} else {
 			pointTxRequestHistory.fail();
 		}
@@ -252,12 +276,17 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			pointTxRequestHistory.success();
 			long requestedAmount = pointTxRequestHistory.getRequestPoint();
 			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
-			PointTransaction pointSourceTx = systemPointSourceWallet.increasePointSource(withdrawAmount, refId);
+			PointTransaction pointSourceTx = systemPointSourceWallet.recordIncreasePointSourceTx(withdrawAmount, refId);
 
 			userWalletRepository.save(userWallet);
-			systemWalletRepository.save(systemPointSourceWallet);
 			pointTransactionRepository.save(withdrawTx);
+
 			pointTransactionRepository.save(pointSourceTx);
+			SystemWalletOutbox outbox = SystemWalletOutbox.create(systemPointSourceWallet.getWalletId(), withdrawAmount,
+				PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);
+			systemWalletOutboxRepository.save(outbox);
+
+			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
 		} else {
 			pointTxRequestHistory.fail();
 		}
