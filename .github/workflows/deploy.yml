@@ -20,8 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "${{ inputs.commit_sha || github.ref }}"
           fetch-depth: "${{ inputs.commit_sha != '' && '0' || '1' }}"
+
+      - name: Checkout specific commit
+        if: ${{ inputs.commit_sha != '' }}
+        run: |
+          git fetch --all
+          git checkout ${{ inputs.commit_sha }}
 
       - name: Resolve deploy SHA
         id: sha
