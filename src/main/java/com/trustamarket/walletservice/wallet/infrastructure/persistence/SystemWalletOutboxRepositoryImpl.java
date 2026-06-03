@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 public class SystemWalletOutboxRepositoryImpl implements SystemWalletOutboxRepository {
+	private static final int BATCH_SIZE = 100;
 	private final SystemWalletOutboxJpaRepository systemWalletOutboxRepository;
 
 	@Override
@@ -32,6 +33,6 @@ public class SystemWalletOutboxRepositoryImpl implements SystemWalletOutboxRepos
 
 	@Override
 	public List<SystemWalletOutbox> findAllByOutboxStatusIsPending(Instant before) {
-		return systemWalletOutboxRepository.findByOutboxStatusAndCreatedAtBeforeOrderByCreatedAtAsc(OutboxStatus.PENDING, before, PageRequest.of(0, batchSize));
+		return systemWalletOutboxRepository.findByOutboxStatusAndCreatedAtBeforeOrderByCreatedAtAsc(OutboxStatus.PENDING, before, PageRequest.of(0, BATCH_SIZE));
 	}
 }
