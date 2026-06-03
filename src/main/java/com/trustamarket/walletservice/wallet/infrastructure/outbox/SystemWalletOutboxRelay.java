@@ -5,7 +5,6 @@ import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -18,9 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 
 // outbox 패턴에서 DB를 읽는 쪽
 @Slf4j
-@Component
 @RequiredArgsConstructor
-public class SystemWalletOutboxRelay {
+public class SystemWalletOutboxRelay implements OutboxPublisher {
 	private LinkedBlockingQueue<UUID> blockingQueue = new LinkedBlockingQueue<>();
 	private final SystemWalletOutboxProcessor processor;
 	private final SystemWalletOutboxRepository systemWalletOutboxRepository;
@@ -44,8 +42,9 @@ public class SystemWalletOutboxRelay {
 	}
 
 	// 커밋 직후 큐에 넣기
+	@Override
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	public void handle(SystemWalletOutboxEvent systemWalletOutboxEvent) {
+	public void publish(SystemWalletOutboxEvent systemWalletOutboxEvent) {
 		blockingQueue.offer(systemWalletOutboxEvent.outboxId());
 	}
 
