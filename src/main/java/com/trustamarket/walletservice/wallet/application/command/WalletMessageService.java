@@ -71,7 +71,7 @@ public class WalletMessageService implements WalletMessageUsecase {
 
 		SystemWalletOutbox outbox= SystemWalletOutbox.create(escrowWallet.getWalletId(), -cancelledAmount, PointTxType.CANCEL_OUT, orderId, RefType.ORDER);
 		systemWalletOutboxRepository.save(outbox);
-		eventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
+		eventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), escrowWallet.getWalletId()));
 
 		CancelCompletedEvent cancelCompletedEvent = CancelCompletedEvent.of(orderId, cancelledAmount);
 		eventPublisher.publishEvent(cancelCompletedEvent);

@@ -125,6 +125,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 
 		SystemWallet systemEscrow = systemWalletProvider.getEscrowWallet();
+		UUID escrowWalletId = systemEscrow.getWalletId();
 
 		//같은 orderId로 왔는지 확인하기
 
@@ -138,10 +139,10 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		userWalletRepository.save(buyerWallet);
 		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));
 
-		SystemWalletOutbox outbox = SystemWalletOutbox.create(systemEscrow.getWalletId(), +orderTotalAmount,
+		SystemWalletOutbox outbox = SystemWalletOutbox.create(escrowWalletId, +orderTotalAmount,
 			PointTxType.ESCROW_DEPOSIT, refId, RefType.ORDER);
 		systemWalletOutboxRepository.save(outbox);
-		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
+		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), escrowWalletId));
 
 		return UseWalletResult.success(buyerWallet.checkBalance());
 	}
@@ -172,17 +173,20 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			pointTransactionRepository.saveAll(transactions);
 		}
 
+		UUID escrowWalletId = escrowWallet.getWalletId();
+		UUID feeWalletId = feeWallet.getWalletId();
+
 		SystemWalletOutbox escrowOutbox = SystemWalletOutbox.create(
-			escrowWallet.getWalletId(), -orderTotalAmount, PointTxType.SETTLEMENT_OUT, orderId, RefType.ORDER
+			 escrowWalletId, -orderTotalAmount, PointTxType.SETTLEMENT_OUT, orderId, RefType.ORDER
 		);
 		SystemWalletOutbox feeOutbox = SystemWalletOutbox.create(
-			feeWallet.getWalletId(), +feeAmount, PointTxType.FEE_REVENUE, orderId, RefType.ORDER
+			feeWalletId, +feeAmount, PointTxType.FEE_REVENUE, orderId, RefType.ORDER
 		);
 		systemWalletOutboxRepository.save(escrowOutbox);
 		systemWalletOutboxRepository.save(feeOutbox);
 
-		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(escrowOutbox.getOutboxId()));
-		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(feeOutbox.getOutboxId()));
+		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(escrowOutbox.getOutboxId(), escrowWalletId));
+		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(feeOutbox.getOutboxId(), feeWalletId));
 
 	}
 
@@ -220,6 +224,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
 			pointTxRequestHistory.success();
+			UUID systemPointSourceWalletId = systemPointSourceWallet.getWalletId();
 			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
 			PointTransaction pointSourceTx = systemPointSourceWallet.recordDecreasePointSourceTx(chargeAmount, refId);
 
@@ -227,11 +232,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			pointTransactionRepository.save(chargeTx);
 
 			pointTransactionRepository.save(pointSourceTx);
-			SystemWalletOutbox outbox = SystemWalletOutbox.create(systemPointSourceWallet.getWalletId(), -chargeAmount,
+			SystemWalletOutbox outbox = SystemWalletOutbox.create(systemPointSourceWalletId , -chargeAmount,
 				PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
 			systemWalletOutboxRepository.save(outbox);
 
-			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
+			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), systemPointSourceWalletId));
 		} else {
 			pointTxRequestHistory.fail();
 		}
@@ -274,7 +279,9 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
 			pointTxRequestHistory.success();
+			UUID pointSourceWalletId = systemPointSourceWallet.getWalletId();
 			long requestedAmount = pointTxRequestHistory.getRequestPoint();
+
 			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
 			PointTransaction pointSourceTx = systemPointSourceWallet.recordIncreasePointSourceTx(withdrawAmount, refId);
 
@@ -282,11 +289,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			pointTransactionRepository.save(withdrawTx);
 
 			pointTransactionRepository.save(pointSourceTx);
-			SystemWalletOutbox outbox = SystemWalletOutbox.create(systemPointSourceWallet.getWalletId(), withdrawAmount,
+			SystemWalletOutbox outbox = SystemWalletOutbox.create(pointSourceWalletId, withdrawAmount,
 				PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);
 			systemWalletOutboxRepository.save(outbox);
 
-			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId()));
+			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), pointSourceWalletId));
 		} else {
 			pointTxRequestHistory.fail();
 		}
