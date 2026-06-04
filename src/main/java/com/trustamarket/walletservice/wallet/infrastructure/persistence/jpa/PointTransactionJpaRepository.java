@@ -54,10 +54,17 @@ public interface PointTransactionJpaRepository extends JpaRepository<PointTransa
 	boolean existsByRefIdAndPointTxType(@Param("refId") UUID refId, @Param("pointTxType") PointTxType pointTxType);
 
 	@Query("""
-    SELECT pt FROM PointTransaction pt 
+    SELECT pt FROM PointTransaction pt
     WHERE pt.ref.refId = :orderId
       AND pt.wallet.walletId = :walletId
       AND pt.pointTxType = :pointTxType
     """)
 	Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(@Param("orderId") UUID orderId, @Param("walletId") UUID walletId, @Param("pointTxType")PointTxType pointTxType);
+
+	@Query("""
+    SELECT pt FROM PointTransaction pt
+    WHERE pt.ref.refId = :refId
+      AND pt.pointTxType = :pointTxType
+    """)
+	Optional<PointTransaction> findByRefIdAndPointTxType(@Param("refId") UUID refId, @Param("pointTxType") PointTxType pointTxType);
 }

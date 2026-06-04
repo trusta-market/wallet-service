@@ -20,4 +20,5 @@ public interface PointTransactionRepository {
 
 	boolean existsByRefIdAndPointTxType(UUID orderId, PointTxType pointTxType);
 	Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType);
+	Optional<PointTransaction> findByRefIdAndPointTxType(UUID refId, PointTxType pointTxType);
 }

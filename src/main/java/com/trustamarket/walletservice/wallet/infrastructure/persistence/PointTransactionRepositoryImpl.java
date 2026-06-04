@@ -52,4 +52,9 @@ public class PointTransactionRepositoryImpl implements PointTransactionRepositor
 	public Optional<PointTransaction> findByOrderIdAndWalletIdAndPointTxType(UUID orderId, UUID walletId, PointTxType pointTxType) {
 		return pointTransactionRepository.findByOrderIdAndWalletIdAndPointTxType(orderId, walletId, pointTxType);
 	}
+
+	@Override
+	public Optional<PointTransaction> findByRefIdAndPointTxType(UUID refId, PointTxType pointTxType) {
+		return pointTransactionRepository.findByRefIdAndPointTxType(refId, pointTxType);
+	}
 }

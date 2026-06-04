@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
+import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
 import com.trustamarket.walletservice.wallet.infrastructure.persistence.jpa.PointTransactionRequestHistoryJpaRepository;
 
@@ -29,6 +30,12 @@ public class PointTransactionRequestHistoryRepositoryImpl implements PointTransa
 	@Override
 	public Optional<PointTransactionRequestHistory> findByIdempotencyKey(String IdempotencyKey) {
 		return pointTransactionRequestHistoryRepository.findByIdempotencyKey(IdempotencyKey);
+	}
+
+	@Override
+	public Optional<PointTransactionRequestHistory> findByRefIdAndPointRequestType(UUID refId,
+		PointRequestType pointRequestType) {
+		return pointTransactionRequestHistoryRepository.findByRefIdAndRequestType(refId, pointRequestType);
 	}
 
 	@Override

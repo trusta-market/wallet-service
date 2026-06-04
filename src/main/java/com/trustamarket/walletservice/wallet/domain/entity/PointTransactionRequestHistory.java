@@ -9,6 +9,7 @@ import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +20,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
@@ -49,6 +51,12 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 
 	@Getter
 	private long requestPoint;
+
+	private UUID refId;
+
+	@OneToOne(mappedBy = "requestHistory", cascade = {CascadeType.REMOVE, CascadeType.PERSIST}, fetch = FetchType.LAZY)
+	@Getter
+	private PointShortage pointShortage;
 
 	public static PointTransactionRequestHistory paymentRequest(
 			Wallet wallet,
@@ -98,6 +106,43 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 
 		return pointTransactionRequestHistory;
 	}
+
+	public static PointTransactionRequestHistory orderPaymentAttempt(
+		Wallet wallet,
+		long requestPoint,
+		UUID refId
+	) {
+		if (wallet == null) {
+			throw new IllegalArgumentException("지갑은 필수");
+		}
+		if (requestPoint <= 0) {
+			throw new IllegalArgumentException("주문 금액은 1원 이상이어야 합니다.");
+		}
+
+
+		PointTransactionRequestHistory pointTransactionRequestHistory = new PointTransactionRequestHistory();
+		pointTransactionRequestHistory.wallet = wallet;
+		pointTransactionRequestHistory.requestPoint = requestPoint;
+		pointTransactionRequestHistory.refId = refId;
+		pointTransactionRequestHistory.requestType = PointRequestType.ORDER_PAYMENT;
+		pointTransactionRequestHistory.status = PointRequestStatus.REQUESTED;
+
+		if (wallet.checkBalance() < requestPoint) {
+			pointTransactionRequestHistory.status = PointRequestStatus.INSUFFICIENT;
+			PointShortage shortage = PointShortage.of(
+				pointTransactionRequestHistory,
+				requestPoint - wallet.checkBalance(),
+				wallet.checkBalance());
+			pointTransactionRequestHistory.addShortage(shortage);
+		}
+
+		return pointTransactionRequestHistory;
+	}
+
+	private void addShortage(PointShortage shortage) {
+		this.pointShortage = shortage;
+	}
+
 
 	public void success() {
 		if (this.status != PointRequestStatus.REQUESTED) {

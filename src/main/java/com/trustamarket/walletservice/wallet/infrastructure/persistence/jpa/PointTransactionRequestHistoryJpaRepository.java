@@ -6,7 +6,9 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
+import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
 
 public interface PointTransactionRequestHistoryJpaRepository extends JpaRepository<PointTransactionRequestHistory, UUID> {
 	Optional<PointTransactionRequestHistory> findByIdempotencyKey(String IdempotencyKey);
+	Optional<PointTransactionRequestHistory> findByRefIdAndRequestType(UUID refId, PointRequestType requestType);
 }

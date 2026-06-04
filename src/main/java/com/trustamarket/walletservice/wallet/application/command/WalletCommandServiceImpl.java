@@ -75,6 +75,12 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
+		PointTransactionRequestHistory attempt =
+			PointTransactionRequestHistory.orderPaymentAttempt(
+				buyerWallet, command.totalAmount(), command.orderId()
+			);
+		pointTxRequestHistoryRepository.save(attempt);
+
 		long currentBalance = buyerWallet.checkBalance();
 		if (currentBalance < command.totalAmount()) {
 			long shortage = command.totalAmount() - currentBalance;
