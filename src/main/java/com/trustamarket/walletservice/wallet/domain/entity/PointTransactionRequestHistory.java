@@ -26,10 +26,10 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 
 @Table(name = "p_point_transaction_request_history",
-	uniqueConstraints = @UniqueConstraint(
-		name = "uk_idempotency_key",
-		columnNames = "idempotency_key"
-	)
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uk_idempotency_key", columnNames = "idempotency_key"),
+		@UniqueConstraint(name = "uk_ref_id_request_type", columnNames = {"ref_id", "request_type"})
+	}
 )
 @Entity
 public class PointTransactionRequestHistory extends BaseTimeEntity { // created, updated 상속 중
@@ -119,22 +119,12 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 			throw new IllegalArgumentException("주문 금액은 1원 이상이어야 합니다.");
 		}
 
-
 		PointTransactionRequestHistory pointTransactionRequestHistory = new PointTransactionRequestHistory();
 		pointTransactionRequestHistory.wallet = wallet;
 		pointTransactionRequestHistory.requestPoint = requestPoint;
 		pointTransactionRequestHistory.refId = refId;
 		pointTransactionRequestHistory.requestType = PointRequestType.ORDER_PAYMENT;
 		pointTransactionRequestHistory.status = PointRequestStatus.REQUESTED;
-
-		if (wallet.checkBalance() < requestPoint) {
-			pointTransactionRequestHistory.status = PointRequestStatus.INSUFFICIENT;
-			PointShortage shortage = PointShortage.of(
-				pointTransactionRequestHistory,
-				requestPoint - wallet.checkBalance(),
-				wallet.checkBalance());
-			pointTransactionRequestHistory.addShortage(shortage);
-		}
 
 		return pointTransactionRequestHistory;
 	}
@@ -156,6 +146,15 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 			throw new WalletException(INVALID_STATUS_TRANSITION);
 		}
 		this.status = PointRequestStatus.FAILED;
+	}
+
+	public void insufficient() {
+		PointShortage shortage = PointShortage.of(
+			this,
+			this.requestPoint - wallet.checkBalance(),
+			wallet.checkBalance());
+		this.addShortage(shortage);
+		this.status = PointRequestStatus.INSUFFICIENT;
 	}
 
 	public boolean isSuccess() {

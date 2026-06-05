@@ -79,11 +79,12 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			PointTransactionRequestHistory.orderPaymentAttempt(
 				buyerWallet, command.totalAmount(), command.orderId()
 			);
-		pointTxRequestHistoryRepository.save(attempt);
 
 		long currentBalance = buyerWallet.checkBalance();
 		if (currentBalance < command.totalAmount()) {
 			long shortage = command.totalAmount() - currentBalance;
+			attempt.insufficient();
+			pointTxRequestHistoryRepository.save(attempt);
 			return UseWalletResult.insufficient(currentBalance, shortage);
 		}
 
@@ -96,6 +97,8 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.ESCROW_DEPOSIT
 		);
 
+		attempt.success();
+		pointTxRequestHistoryRepository.save(attempt);
 		walletRepository.save(buyerWallet);
 		walletRepository.save(systemEscrow);
 		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));
