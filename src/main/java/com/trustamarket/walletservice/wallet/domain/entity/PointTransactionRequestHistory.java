@@ -169,4 +169,8 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	public boolean isRequested() {
 		return this.status == PointRequestStatus.REQUESTED;
 	}
+
+	public boolean isInsufficient() {
+		return this.status == PointRequestStatus.INSUFFICIENT;
+	}
 }

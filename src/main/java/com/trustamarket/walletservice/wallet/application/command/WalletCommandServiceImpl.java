@@ -88,8 +88,10 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			if (history.isSuccess()) {
 				return UseWalletResult.success(buyerWallet.checkBalance());
 			}
-			PointShortage pointShortage = history.getPointShortage();
-			return UseWalletResult.insufficient(pointShortage.getBalance(), pointShortage.getShortage());
+			if (history.isInsufficient()) {
+				PointShortage pointShortage = history.getPointShortage();
+				return UseWalletResult.insufficient(pointShortage.getBalance(), pointShortage.getShortage());
+			}
 		}
 
 		//다른 결제 요청이지만 이미 포인트 사용 내역이 있다면 종료
