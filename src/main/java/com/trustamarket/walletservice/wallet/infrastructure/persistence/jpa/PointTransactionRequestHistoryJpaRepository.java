@@ -10,5 +10,5 @@ import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
 
 public interface PointTransactionRequestHistoryJpaRepository extends JpaRepository<PointTransactionRequestHistory, UUID> {
 	Optional<PointTransactionRequestHistory> findByIdempotencyKey(String IdempotencyKey);
-	Optional<PointTransactionRequestHistory> findByRefIdAndRequestType(UUID refId, PointRequestType requestType);
+	Optional<PointTransactionRequestHistory> findByIdempotencyKeyAndRefIdAndRequestType(String IdempotencyKey, UUID refId, PointRequestType requestType);
 }

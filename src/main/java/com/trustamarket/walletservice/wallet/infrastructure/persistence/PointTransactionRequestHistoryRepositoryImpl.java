@@ -33,9 +33,9 @@ public class PointTransactionRequestHistoryRepositoryImpl implements PointTransa
 	}
 
 	@Override
-	public Optional<PointTransactionRequestHistory> findByRefIdAndPointRequestType(UUID refId,
-		PointRequestType pointRequestType) {
-		return pointTransactionRequestHistoryRepository.findByRefIdAndRequestType(refId, pointRequestType);
+	public Optional<PointTransactionRequestHistory> findByIdempotencyKeyAndRefIdAndPointRequestType(
+		String idempotencyKey, UUID refId, PointRequestType pointRequestType) {
+		return pointTransactionRequestHistoryRepository.findByIdempotencyKeyAndRefIdAndRequestType(idempotencyKey, refId, pointRequestType);
 	}
 
 	@Override

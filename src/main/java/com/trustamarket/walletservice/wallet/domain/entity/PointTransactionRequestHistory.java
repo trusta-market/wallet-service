@@ -27,8 +27,7 @@ import lombok.Getter;
 
 @Table(name = "p_point_transaction_request_history",
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uk_idempotency_key", columnNames = "idempotency_key"),
-		@UniqueConstraint(name = "uk_ref_id_request_type", columnNames = {"ref_id", "request_type"})
+		@UniqueConstraint(name = "uk_idempotency_key_ref_id_request_type", columnNames = {"idempotency_key", "ref_id","request_type"} ),
 	}
 )
 @Entity
@@ -110,7 +109,8 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	public static PointTransactionRequestHistory orderPaymentAttempt(
 		Wallet wallet,
 		long requestPoint,
-		UUID refId
+		UUID refId,
+		String idempotencyKey
 	) {
 		if (wallet == null) {
 			throw new IllegalArgumentException("지갑은 필수");
@@ -125,6 +125,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 		pointTransactionRequestHistory.refId = refId;
 		pointTransactionRequestHistory.requestType = PointRequestType.ORDER_PAYMENT;
 		pointTransactionRequestHistory.status = PointRequestStatus.REQUESTED;
+		pointTransactionRequestHistory.idempotencyKey = idempotencyKey;
 
 		return pointTransactionRequestHistory;
 	}

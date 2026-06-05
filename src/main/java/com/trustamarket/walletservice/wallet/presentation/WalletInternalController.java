@@ -56,7 +56,7 @@ public class WalletInternalController {
 
 	@PatchMapping("/usages")
 	public ResponseEntity<CommonResponse<UseWalletResponse>> usePoint (@Valid @RequestBody UseWalletRequest request) {
-		UseWalletResult result = walletCommandService.usePoint(new UseWalletCommand(request.orderId(), request.buyerId(), request.totalAmount()));
+		UseWalletResult result = walletCommandService.usePoint(new UseWalletCommand(request.idempotencyKey(), request.orderId(), request.buyerId(), request.totalAmount()));
 		
 		return ResponseEntity.ok(CommonResponse.of(HttpStatus.OK.value(), new UseWalletResponse(result.balance(), result.shortage())));
 	}

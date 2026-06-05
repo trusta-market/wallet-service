@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Positive;
 
 public record UseWalletRequest(
 	@NotNull
+	UUID idempotencyKey, // 결제 요청 ID = idempotencyKey 를 함께 보내줌
+	@NotNull
 	UUID orderId,
 	@NotNull
 	UUID buyerId,
