@@ -6,10 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trustamarket.common.response.CommonResponse;
@@ -47,8 +47,8 @@ public class WalletInternalController {
 			.body(CommonResponse.of(HttpStatus.CREATED.value(), new CreateWalletResponse(createResult.result())));
 	}
 
-	@GetMapping("/usages/{orderId}") // requestParam
-	public ResponseEntity<CommonResponse<GetPointUsageResponse>> getPointUsageTransaction(@PathVariable UUID orderId) {
+	@GetMapping("/usages") // requestParam
+	public ResponseEntity<CommonResponse<GetPointUsageResponse>> getPointUsageTransaction(@RequestParam(required = true) UUID orderId) {
 		GetPointUsageResult result = walletQueryService.getPointUsageTx(orderId);
 		return ResponseEntity.ok(CommonResponse.of(HttpStatus.OK.value(), GetPointUsageResponse.from(result)));
 	}
