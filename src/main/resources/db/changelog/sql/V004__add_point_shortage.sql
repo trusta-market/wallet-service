@@ -6,7 +6,9 @@ ALTER TABLE p_point_transaction_request_history
 
 --changeset ihyein:2
 ALTER TABLE p_point_transaction_request_history
-    ADD CONSTRAINT uk_ref_id_request_type UNIQUE (ref_id, request_type);
+DROP CONSTRAINT uk_idempotency_key,
+    ADD CONSTRAINT uk_idempotency_key_ref_id_request_type
+        UNIQUE (idempotency_key, ref_id, request_type);
 
 --changeset ihyein:3
 CREATE TABLE IF NOT EXISTS p_point_shortage (
