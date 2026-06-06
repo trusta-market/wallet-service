@@ -28,13 +28,19 @@ public class PointTxRequestService {
 	@Observed(name = "wallet.withdraw-request-save")
 	@Transactional // find와 save간의 transaction
 	public UUID withdrawPointRequest(WithdrawPointCommand command) {
+		log.info("[withdrawPointRequest] userId={} amount={}", command.userId(), command.withdrawAmount());
+
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
 			.orElseThrow(() -> {
-				log.error(String.valueOf(command.userId()));
+				log.error("[withdrawPointRequest] wallet not found userId={}", command.userId());
 				return new WalletException(WalletErrorCode.WALLET_NOT_FOUND);
 			});
 
+		log.info("[withdrawPointRequest] balance={} requested={}", userWallet.checkBalance(), command.withdrawAmount());
+
 		if(!userWallet.isEnough(command.withdrawAmount())) {
+			log.warn("[withdrawPointRequest] insufficient balance userId={} balance={} requested={}",
+				command.userId(), userWallet.checkBalance(), command.withdrawAmount());
 			throw new WalletException(WalletErrorCode.INVALID_BALANCE);
 		}
 
@@ -42,6 +48,7 @@ public class PointTxRequestService {
 			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount(), command.idempotencyKey())
 		);
 
+		log.info("[withdrawPointRequest] saved historyId={}", pointTxRequestHistory.getPointTxRequestHistoryId());
 		return pointTxRequestHistory.getPointTxRequestHistoryId();
 	}
 
