@@ -107,7 +107,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	}
 
 	public static PointTransactionRequestHistory orderPaymentAttempt(
-		Wallet wallet,
+		UserWallet wallet,
 		long requestPoint,
 		UUID refId,
 		String idempotencyKey
@@ -120,7 +120,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 		}
 
 		PointTransactionRequestHistory pointTransactionRequestHistory = new PointTransactionRequestHistory();
-		pointTransactionRequestHistory.wallet = wallet;
+		pointTransactionRequestHistory.userWallet = wallet;
 		pointTransactionRequestHistory.requestPoint = requestPoint;
 		pointTransactionRequestHistory.refId = refId;
 		pointTransactionRequestHistory.requestType = PointRequestType.ORDER_PAYMENT;
@@ -152,8 +152,8 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	public void insufficient() {
 		PointShortage shortage = PointShortage.of(
 			this,
-			this.requestPoint - wallet.checkBalance(),
-			wallet.checkBalance());
+			this.requestPoint - userWallet.checkBalance(),
+			userWallet.checkBalance());
 		this.addShortage(shortage);
 		this.status = PointRequestStatus.INSUFFICIENT;
 	}
