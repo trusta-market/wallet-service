@@ -8,16 +8,16 @@ import lombok.Getter;
 @Getter
 public class WalletException extends CustomException {
 	private final ErrorCodeSpec errorCode;
-	private String message;
+	private String detail;
 
 	public WalletException(ErrorCodeSpec errorCode) {
 		super(errorCode);
 		this.errorCode = errorCode;
 	}
 
-	public WalletException(String message, ErrorCodeSpec errorCode) {
+	public WalletException(String detail, ErrorCodeSpec errorCode) {
 		super(errorCode);
-		this.message = message;
+		this.detail = detail;
 		this.errorCode = errorCode;
 	}
 }

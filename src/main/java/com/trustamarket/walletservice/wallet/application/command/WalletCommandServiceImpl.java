@@ -77,7 +77,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		UserWallet userwallet = UserWallet.createUserWallet(userId);
 		userWalletRepository.save(userwallet); //DataIntegrity exception은 RestControllerAdvice에서 처리
-		log.info(userId.toString());
+		// log.info(userId.toString());
 		return new CreateWalletResult(userwallet.getWalletId(), true);
 	}
 
@@ -246,13 +246,13 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Observed(name = "wallet.withdraw-point")
 	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
-		log.info("[withdrawPoint] start userId={} amount={}", command.userId(), command.withdrawAmount());
+		// log.info("[withdrawPoint] start userId={} amount={}", command.userId(), command.withdrawAmount());
 		String idempotencyKey = command.idempotencyKey();
 
 		Optional<PointTransactionRequestHistory> pointTxRequestHistory = idempotencyHandler.check(idempotencyKey);
 		if (pointTxRequestHistory.isPresent()) {
-			log.info("[withdrawPoint] idempotent hit userId={} historyId={}",
-				command.userId(), pointTxRequestHistory.get().getPointTxRequestHistoryId());
+			// log.info("[withdrawPoint] idempotent hit userId={} historyId={}",
+			// 	command.userId(), pointTxRequestHistory.get().getPointTxRequestHistoryId());
 			return new WithdrawPointResult(pointTxRequestHistory.get().getPointTxRequestHistoryId());
 		}
 
@@ -274,7 +274,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			throw e;
 		}
 
-		log.info("[withdrawPoint] done userId={} historyId={}", command.userId(), historyId);
+		// log.info("[withdrawPoint] done userId={} historyId={}", command.userId(), historyId);
 		return new WithdrawPointResult(historyId);
 	}
 
