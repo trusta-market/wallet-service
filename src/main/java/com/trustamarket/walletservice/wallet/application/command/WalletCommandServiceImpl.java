@@ -21,10 +21,12 @@ import com.trustamarket.walletservice.wallet.application.dto.result.CreateWallet
 import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.WithdrawPointResult;
 import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
+import com.trustamarket.walletservice.wallet.domain.entity.PointShortage;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
 import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
+import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
@@ -75,9 +77,40 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
+		// 같은 idempotency key있을 때 처리 상태에 따라 return
+		String idempotencyKey = command.idempotencyKey().toString();
+		Optional<PointTransactionRequestHistory> existing =
+			pointTxRequestHistoryRepository.findByIdempotencyKeyAndRefIdAndPointRequestType(
+				idempotencyKey, command.orderId(), PointRequestType.ORDER_PAYMENT
+			);
+		if (existing.isPresent()) {
+			PointTransactionRequestHistory history = existing.get();
+			if (history.isSuccess()) {
+				return UseWalletResult.success(buyerWallet.checkBalance());
+			}
+			if (history.isInsufficient()) {
+				PointShortage pointShortage = history.getPointShortage();
+				return UseWalletResult.insufficient(pointShortage.getBalance(), pointShortage.getShortage());
+			}
+		}
+
+		//다른 결제 요청이지만 이미 포인트 사용 내역이 있다면 종료
+		if (pointTransactionRepository.existsByRefIdAndPointTxType(
+			command.orderId(), PointTxType.BUYER_PAYMENT)) {
+			return UseWalletResult.success(buyerWallet.checkBalance());
+		}
+
+
+		PointTransactionRequestHistory attempt =
+			PointTransactionRequestHistory.orderPaymentAttempt(
+				buyerWallet, command.totalAmount(), command.orderId(), idempotencyKey
+			);
+
 		long currentBalance = buyerWallet.checkBalance();
 		if (currentBalance < command.totalAmount()) {
 			long shortage = command.totalAmount() - currentBalance;
+			attempt.insufficient();
+			pointTxRequestHistoryRepository.save(attempt);
 			return UseWalletResult.insufficient(currentBalance, shortage);
 		}
 
@@ -90,6 +123,8 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.ESCROW_DEPOSIT
 		);
 
+		attempt.success();
+		pointTxRequestHistoryRepository.save(attempt);
 		walletRepository.save(buyerWallet);
 		walletRepository.save(systemEscrow);
 		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));

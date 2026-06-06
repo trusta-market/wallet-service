@@ -3,11 +3,15 @@ package com.trustamarket.walletservice.wallet.application.dto.command;
 import java.util.UUID;
 
 public record UseWalletCommand(
+	UUID idempotencyKey,
 	UUID orderId,
 	UUID buyerId,
 	Long totalAmount
 ) {
 	public UseWalletCommand {
+		if (idempotencyKey == null) {
+			throw new IllegalArgumentException("idempotencyKey는 필수입니다.");
+		}
 		if (orderId == null) {
 			throw new IllegalArgumentException("주문 ID는 필수입니다.");
 		}

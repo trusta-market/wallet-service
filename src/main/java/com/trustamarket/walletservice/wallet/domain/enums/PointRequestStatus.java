@@ -3,7 +3,8 @@ package com.trustamarket.walletservice.wallet.domain.enums;
 public enum PointRequestStatus {
 	REQUESTED,
 	SUCCESS,
-	FAILED;
+	FAILED,
+	INSUFFICIENT;
 
 	public static PointRequestStatus from(String value) {
 		if (value == null) {
