@@ -1,6 +1,5 @@
 package com.trustamarket.walletservice.wallet.domain.entity;
 
-import java.time.Instant;
 import java.util.UUID;
 
 import com.trustamarket.common.domain.BaseCreatedEntity;
@@ -57,8 +56,6 @@ public class PointTransaction extends BaseCreatedEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "tx_type", nullable = false)
 	private PointTxType pointTxType;
-
-	private Instant processedAt;
 
 	public static PointTransaction create(
 		UUID walletId,
