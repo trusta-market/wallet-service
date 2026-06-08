@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import io.micrometer.observation.annotation.Observed;
+import org.springframework.util.StopWatch;
 
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
@@ -84,15 +85,21 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	@Observed(name = "wallet.use-point")
 	@Transactional
 	public UseWalletResult usePoint(UseWalletCommand command) {
+		StopWatch sw = new StopWatch("usePoint");
+
+		sw.start("load-buyer-wallet");
 		UserWallet buyerWallet = userWalletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+		sw.stop();
 
 		// 같은 idempotency key있을 때 처리 상태에 따라 return
 		String idempotencyKey = command.idempotencyKey().toString();
+		sw.start("idempotency-check");
 		Optional<PointTransactionRequestHistory> existing =
 			pointTxRequestHistoryRepository.findByIdempotencyKeyAndRefIdAndPointRequestType(
 				idempotencyKey, command.orderId(), PointRequestType.ORDER_PAYMENT
 			);
+		sw.stop();
 		if (existing.isPresent()) {
 			PointTransactionRequestHistory history = existing.get();
 			if (history.isSuccess()) {
@@ -105,11 +112,13 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 
 		//다른 결제 요청이지만 이미 포인트 사용 내역이 있다면 종료
-		if (pointTransactionRepository.existsByRefIdAndPointTxType(
-			command.orderId(), PointTxType.BUYER_PAYMENT)) {
+		sw.start("duplicate-tx-check");
+		boolean duplicate = pointTransactionRepository.existsByRefIdAndPointTxType(
+			command.orderId(), PointTxType.BUYER_PAYMENT);
+		sw.stop();
+		if (duplicate) {
 			return UseWalletResult.success(buyerWallet.checkBalance());
 		}
-
 
 		PointTransactionRequestHistory attempt =
 			PointTransactionRequestHistory.orderPaymentAttempt(
@@ -124,16 +133,17 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			return UseWalletResult.insufficient(currentBalance, shortage);
 		}
 
+		sw.start("load-escrow-wallet");
 		SystemWallet systemEscrow = systemWalletProvider.getEscrowWallet();
+		sw.stop();
 		UUID escrowWalletId = systemEscrow.getWalletId();
-
-		//같은 orderId로 왔는지 확인하기
 
 		long orderTotalAmount = command.orderTotalAmount();
 		UUID refId = command.orderId();
 		PointTransaction userTx = buyerWallet.buyerPayment(orderTotalAmount, refId);
 		PointTransaction escrowTx = systemEscrow.recordEscrowDepositPointTx(orderTotalAmount, refId);
 
+		sw.start("save-transactions");
 		attempt.success();
 		pointTxRequestHistoryRepository.save(attempt);
 		userWalletRepository.save(buyerWallet);
@@ -142,8 +152,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		SystemWalletOutbox outbox = SystemWalletOutbox.create(escrowWalletId, +orderTotalAmount,
 			PointTxType.ESCROW_DEPOSIT, refId, RefType.ORDER);
 		systemWalletOutboxRepository.save(outbox);
+		sw.stop();
+
 		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), escrowWalletId));
 
+		log.info("[usePoint] {}", sw.prettyPrint());
 		return UseWalletResult.success(buyerWallet.checkBalance());
 	}
 
@@ -192,19 +205,25 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Observed(name = "wallet.charge-point")
 	public ChargePointResult chargePoint(ChargePointCommand command) {
+		StopWatch sw = new StopWatch("chargePoint");
 		String idempotencyKey = command.idempotencyKey();
 
+		sw.start("idempotency-check");
 		Optional<PointTransactionRequestHistory> pointTxRequestHistory = idempotencyHandler.check(idempotencyKey);
+		sw.stop();
 		if (pointTxRequestHistory.isPresent()) {
 			throw new IllegalArgumentException("이미 요청된 충전입니다.");
 		}
 
+		sw.start("save-charge-request");
 		UUID historyId = pointTxRequestService.chargePointRequest(command);
+		sw.stop();
 
-		ChargePointResult result = paymentPort.chargePoint(
-				command.userId(), historyId, command.chargeAmount()
-		);
+		sw.start("payment-feign");
+		ChargePointResult result = paymentPort.chargePoint(command.userId(), historyId, command.chargeAmount());
+		sw.stop();
 
+		log.info("[chargePoint] {}", sw.prettyPrint());
 		return result;
 	}
 
@@ -246,35 +265,38 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Observed(name = "wallet.withdraw-point")
 	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
-		// log.info("[withdrawPoint] start userId={} amount={}", command.userId(), command.withdrawAmount());
+		StopWatch sw = new StopWatch("withdrawPoint");
 		String idempotencyKey = command.idempotencyKey();
 
+		sw.start("idempotency-check");
 		Optional<PointTransactionRequestHistory> pointTxRequestHistory = idempotencyHandler.check(idempotencyKey);
+		sw.stop();
 		if (pointTxRequestHistory.isPresent()) {
-			// log.info("[withdrawPoint] idempotent hit userId={} historyId={}",
-			// 	command.userId(), pointTxRequestHistory.get().getPointTxRequestHistoryId());
 			return new WithdrawPointResult(pointTxRequestHistory.get().getPointTxRequestHistoryId());
 		}
 
-		//트렌젝션 나눴기 때문에 paymentPort에 대한 saga 힘들다.
+		sw.start("save-withdraw-request");
 		UUID historyId;
 		try {
 			historyId = pointTxRequestService.withdrawPointRequest(command);
 		} catch (Exception e) {
+			sw.stop();
 			log.error("[withdrawPoint] withdrawPointRequest failed userId={} amount={}", command.userId(), command.withdrawAmount(), e);
 			throw e;
 		}
+		sw.stop();
 
+		sw.start("payment-feign");
 		try {
-			paymentPort.withdrawPoint(
-				command.userId(), historyId, command.withdrawAmount()
-			); // 이미 Reqhistory저장했는데 여기서 오류가 난다면 문제가 됨.
+			paymentPort.withdrawPoint(command.userId(), historyId, command.withdrawAmount());
 		} catch (Exception e) {
+			sw.stop();
 			log.error("[withdrawPoint] paymentPort failed userId={} historyId={}", command.userId(), historyId, e);
 			throw e;
 		}
+		sw.stop();
 
-		// log.info("[withdrawPoint] done userId={} historyId={}", command.userId(), historyId);
+		log.info("[withdrawPoint] {}", sw.prettyPrint());
 		return new WithdrawPointResult(historyId);
 	}
 
