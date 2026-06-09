@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import io.micrometer.observation.annotation.Observed;
 
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
@@ -209,6 +210,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 	}
 
+	@Observed(name = "wallet.withdraw-point")
 	public WithdrawPointResult withdrawPoint(WithdrawPointCommand command) {
 		String idempotencyKey = command.idempotencyKey();
 
@@ -227,6 +229,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		return new WithdrawPointResult(historyId);
 	}
 
+	@Observed(name = "wallet.withdraw-complete")
 	@Transactional
 	public void withdrawComplete(WithdrawCompleteCommand command) {
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())

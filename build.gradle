@@ -26,6 +26,7 @@ repositories {
 
 ext {
 	set('springCloudVersion', "2025.0.2")
+	set('springCloudGcpVersion', "5.8.0")   // for trace
 }
 
 dependencies {
@@ -39,6 +40,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'org.springframework.kafka:spring-kafka'
+
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-trace'
+	implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	compileOnly 'org.projectlombok:lombok'
 	implementation 'org.liquibase:liquibase-core'
@@ -54,6 +61,7 @@ dependencies {
 dependencyManagement {
 	imports {
 		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+		mavenBom "com.google.cloud:spring-cloud-gcp-dependencies:${springCloudGcpVersion}"
 	}
 }
 
