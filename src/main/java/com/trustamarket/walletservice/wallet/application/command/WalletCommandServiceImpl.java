@@ -58,6 +58,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	private final PointTxRequestService pointTxRequestService;
 	private final IdempotencyHandler idempotencyHandler;
 
+	@Observed(name = "wallet.create-wallet")
 	@Transactional
 	public CreateWalletResult createUserWallet(UUID userId) {
 		if (userId == null) {
@@ -76,6 +77,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		return new CreateWalletResult(userwallet.getWalletId(), true);
 	}
 
+	@Observed(name = "wallet.use-point")
 	@Transactional
 	public UseWalletResult usePoint(UseWalletCommand command) {
 		UserWallet buyerWallet = userWalletRepository.findByUserId(command.buyerId())
@@ -138,6 +140,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		return UseWalletResult.success(buyerWallet.checkBalance());
 	}
 
+	@Observed(name = "wallet.transfer-for-settlement")
 	@Override
 	@Transactional(propagation = Propagation.MANDATORY) // 부모 트랜잭션(정산)에 반드시 합류하도록 설정
 	public void transferForSettlement(UUID orderId, UUID sellerId, long totalAmount, long sellerAmount, long feeAmount) { // dto로 변경 예정
@@ -164,6 +167,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 	}
 
+	@Observed(name = "wallet.charge-point")
 	public ChargePointResult chargePoint(ChargePointCommand command) {
 		String idempotencyKey = command.idempotencyKey();
 
@@ -181,6 +185,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		return result;
 	}
 
+	@Observed(name = "wallet.charge-complete")
 	@Transactional
 	public void chargeComplete(ChargeCompleteCommand command) {
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())

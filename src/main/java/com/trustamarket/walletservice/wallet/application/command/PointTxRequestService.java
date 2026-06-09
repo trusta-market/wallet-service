@@ -14,6 +14,7 @@ import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,6 +25,7 @@ public class PointTxRequestService {
 	private final UserWalletRepository userWalletRepository;
 	private final PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
 
+	@Observed(name = "wallet.withdraw-request-save")
 	@Transactional // find와 save간의 transaction
 	public UUID withdrawPointRequest(WithdrawPointCommand command) {
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
@@ -43,6 +45,7 @@ public class PointTxRequestService {
 		return pointTxRequestHistory.getPointTxRequestHistoryId();
 	}
 
+	@Observed(name = "wallet.charge-request-save")
 	@Transactional
 	public UUID chargePointRequest(ChargePointCommand command) {
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
