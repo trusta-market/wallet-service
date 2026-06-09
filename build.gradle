@@ -41,7 +41,6 @@ dependencies {
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'org.springframework.kafka:spring-kafka'
 
-	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
 	implementation('com.google.cloud:spring-cloud-gcp-starter-trace') {
 		exclude group: 'io.grpc', module: 'grpc-netty-shaded'
 	}
