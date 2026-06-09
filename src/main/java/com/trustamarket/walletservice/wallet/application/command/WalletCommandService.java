@@ -13,7 +13,7 @@ import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletRes
 import com.trustamarket.walletservice.wallet.application.dto.result.WithdrawPointResult;
 
 public interface WalletCommandService {
-	CreateWalletResult createWallet(UUID userId);
+	CreateWalletResult createUserWallet(UUID userId);
 	UseWalletResult usePoint(UseWalletCommand command);
 
 	ChargePointResult chargePoint(ChargePointCommand command);

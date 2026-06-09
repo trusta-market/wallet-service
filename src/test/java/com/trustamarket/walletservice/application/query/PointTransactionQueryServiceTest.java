@@ -23,17 +23,17 @@ import com.trustamarket.walletservice.wallet.application.dto.query.GetPointTrans
 import com.trustamarket.walletservice.wallet.application.dto.result.GetPointTransactionPageResult;
 import com.trustamarket.walletservice.wallet.application.query.WalletQueryServiceImpl;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 
 @ExtendWith(MockitoExtension.class)
 class PointTransactionQueryServiceTest {
 
 	@Mock
-	private WalletRepository walletRepository;
+	private UserWalletRepository walletRepository;
 
 	@Mock
 	private PointTransactionRepository pointTransactionRepository;
@@ -45,7 +45,7 @@ class PointTransactionQueryServiceTest {
 	@DisplayName("첫 조회면 findFirstPointTransactions를 호출해 거래내역을 반환한다")
 	void getPointTransactions_withoutCursor_callsFirstQuery() {
 		UUID userId = UUID.randomUUID();
-		Wallet wallet = Wallet.createUserWallet(userId);
+		UserWallet wallet = UserWallet.createUserWallet(userId);
 		Instant now = Instant.now();
 
 		PointTransaction tx1 = mockTransaction(UUID.randomUUID(), now, 3000L, PointTxType.CHARGE);
@@ -80,7 +80,7 @@ class PointTransactionQueryServiceTest {
 	@DisplayName("커서가 있으면 findNextPointTransactions를 호출한다")
 	void getPointTransactions_withCursor_callsNextQuery() {
 		UUID userId = UUID.randomUUID();
-		Wallet wallet = Wallet.createUserWallet(userId);
+		UserWallet wallet = UserWallet.createUserWallet(userId);
 		Instant cursorTime = Instant.now().minusSeconds(300);
 		UUID cursorId = UUID.randomUUID();
 		Instant from = Instant.now().minusSeconds(3600);

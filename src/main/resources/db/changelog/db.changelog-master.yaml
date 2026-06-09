@@ -3,5 +3,8 @@ databaseChangeLog:
       file: sql/V001__init.sql
       relativeToChangelogFile: true
   - include:
+      file: sql/V002__separate_user_system_wallets.sql
+      relativeToChangelogFile: true
+  - include:
       file: sql/V004__add_point_shortage.sql
       relativeToChangelogFile: true

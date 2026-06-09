@@ -42,7 +42,7 @@ public class WalletInternalController {
 
 	@PostMapping
 	public ResponseEntity<CommonResponse<CreateWalletResponse>> createWallet(@RequestBody CreateWalletRequest request) {
-		CreateWalletResult createResult = walletCommandService.createWallet(request.userId());
+		CreateWalletResult createResult = walletCommandService.createUserWallet(request.userId());
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(CommonResponse.of(HttpStatus.CREATED.value(), new CreateWalletResponse(createResult.result())));
 	}

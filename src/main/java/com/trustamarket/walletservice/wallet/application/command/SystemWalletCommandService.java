@@ -10,30 +10,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.trustamarket.walletservice.wallet.application.creator.SystemWalletCreator;
 import com.trustamarket.walletservice.wallet.application.dto.creator.CreateSystemWalletDto;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
-import com.trustamarket.walletservice.wallet.domain.enums.WalletType;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.enums.SystemWalletType;
+import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
 
 @Service
 public class SystemWalletCommandService {
 
-	private final Map<WalletType, SystemWalletCreator> creators;
-	private final WalletRepository walletRepository;
+	private final Map<SystemWalletType, SystemWalletCreator> creators;
+	private final SystemWalletRepository systemWalletRepository;
 
 
 	public SystemWalletCommandService(List<SystemWalletCreator> creatorList,
-		WalletRepository walletRepository) {
+		SystemWalletRepository systemWalletRepository) {
 		this.creators = creatorList.stream()
 			.collect(Collectors.toMap(
 				creator -> creator.getType(),
 				creator -> creator
 			));
-		this.walletRepository = walletRepository;
+		this.systemWalletRepository = systemWalletRepository;
 	}
 
 	@Transactional
-	public Wallet createSystemWallet(CreateSystemWalletDto systemWalletDto) {
-		WalletType type = systemWalletDto.walletType();
+	public SystemWallet createSystemWallet(CreateSystemWalletDto systemWalletDto) {
+		SystemWalletType type = systemWalletDto.systemWalletType();
 		UUID operatorId = systemWalletDto.operatorId();
 
 		SystemWalletCreator creator = creators.get(type);
@@ -41,8 +41,8 @@ public class SystemWalletCommandService {
 			throw new IllegalArgumentException("지원하지 않는 시스템 지갑 타입");
 		}
 
-		Wallet wallet = creator.create(operatorId);
-		Wallet saved = walletRepository.save(wallet);
+		SystemWallet systemWallet = creator.create(operatorId);
+		SystemWallet saved = systemWalletRepository.save(systemWallet);
 		return saved;
 	}
 }

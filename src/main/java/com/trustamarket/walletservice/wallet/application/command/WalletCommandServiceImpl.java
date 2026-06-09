@@ -24,7 +24,8 @@ import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
 import com.trustamarket.walletservice.wallet.domain.entity.PointShortage;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
@@ -33,7 +34,8 @@ import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
 
 import lombok.RequiredArgsConstructor;
@@ -44,7 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WalletCommandServiceImpl implements WalletCommandService {
 
-	private final WalletRepository walletRepository;
+	private final UserWalletRepository userWalletRepository;
+	private final SystemWalletRepository systemWalletRepository;
 	private final SystemWalletProvider systemWalletProvider;
 	private final PaymentPort paymentPort;
 
@@ -55,26 +58,26 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	private final IdempotencyHandler idempotencyHandler;
 
 	@Transactional
-	public CreateWalletResult createWallet(UUID userId) {
+	public CreateWalletResult createUserWallet(UUID userId) {
 		if (userId == null) {
 			// throw new IllegalArgumentException("사용자 ID는 필수입니다");
 			return new CreateWalletResult(null, false);
 		}
 
-		if (walletRepository.existsByUserId(userId)) {
+		if (userWalletRepository.existsByUserId(userId)) {
 			// throw new WalletException(ALREADY_EXISTS_WALLET);
 			return new CreateWalletResult(null, true);
 		}
 
-		Wallet wallet = Wallet.createUserWallet(userId);
-		walletRepository.save(wallet); //DataIntegrity exception은 RestControllerAdvice에서 처리
+		UserWallet userwallet = UserWallet.createUserWallet(userId);
+		userWalletRepository.save(userwallet); //DataIntegrity exception은 RestControllerAdvice에서 처리
 		log.info(userId.toString());
-		return new CreateWalletResult(wallet.getWalletId(), true);
+		return new CreateWalletResult(userwallet.getWalletId(), true);
 	}
 
 	@Transactional
 	public UseWalletResult usePoint(UseWalletCommand command) {
-		Wallet buyerWallet = walletRepository.findByUserId(command.buyerId())
+		UserWallet buyerWallet = userWalletRepository.findByUserId(command.buyerId())
 			.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
 
 		// 같은 idempotency key있을 때 처리 상태에 따라 return
@@ -114,7 +117,9 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			return UseWalletResult.insufficient(currentBalance, shortage);
 		}
 
-		Wallet systemEscrow = systemWalletProvider.getEscrowWallet();
+		SystemWallet systemEscrow = systemWalletProvider.getEscrowWallet();
+
+		//같은 orderId로 왔는지 확인하기
 
 		PointTransaction userTx = buyerWallet.decrease(
 			command.totalAmount(), command.orderId(), RefType.ORDER, PointTxType.BUYER_PAYMENT
@@ -125,8 +130,8 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		attempt.success();
 		pointTxRequestHistoryRepository.save(attempt);
-		walletRepository.save(buyerWallet);
-		walletRepository.save(systemEscrow);
+		userWalletRepository.save(buyerWallet);
+		systemWalletRepository.save(systemEscrow);
 		pointTransactionRepository.saveAll(List.of(userTx, escrowTx));
 
 		return UseWalletResult.success(buyerWallet.checkBalance());
@@ -136,14 +141,14 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	@Transactional(propagation = Propagation.MANDATORY) // 부모 트랜잭션(정산)에 반드시 합류하도록 설정
 	public void transferForSettlement(UUID orderId, UUID sellerId, long totalAmount, long sellerAmount, long feeAmount) { // dto로 변경 예정
 
-		Wallet adminWallet = systemWalletProvider.getEscrowWallet();
-		Wallet feeWallet = systemWalletProvider.getFeeWallet();
-		Wallet sellerWallet = walletRepository.findByUserId(sellerId)
+		SystemWallet escrowWallet = systemWalletProvider.getEscrowWallet();
+		SystemWallet feeWallet = systemWalletProvider.getFeeWallet();
+		UserWallet sellerWallet = userWalletRepository.findByUserId(sellerId)
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 
 		List<PointTransaction> transactions = new ArrayList<>();
 		System.out.println(totalAmount);
-		transactions.add(adminWallet.settleOut(totalAmount, orderId));
+		transactions.add(escrowWallet.settleOut(totalAmount, orderId));
 
 		if (sellerAmount > 0) {
 			transactions.add(sellerWallet.settleIn(sellerAmount, orderId));
@@ -175,15 +180,11 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		return result;
 	}
 
-	private boolean isExistPointTxRequestHistory(UUID requestedHistoryId){
-		return pointTxRequestHistoryRepository.existsById(requestedHistoryId);
-	}
-
 	@Transactional
 	public void chargeComplete(ChargeCompleteCommand command) {
-		Wallet userWallet = walletRepository.findByUserId(command.userId())
+		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
 				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
-		Wallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
+		SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
 
 		long chargeAmount = command.chargedAmount();
 		UUID refId = command.paymentId();
@@ -197,8 +198,8 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
 			PointTransaction pointSourceTx = systemPointSourceWallet.decreasePointSource(chargeAmount, refId);
 
-			walletRepository.save(userWallet);
-			walletRepository.save(systemPointSourceWallet);
+			userWalletRepository.save(userWallet);
+			systemWalletRepository.save(systemPointSourceWallet);
 			pointTransactionRepository.save(pointSourceTx);
 			pointTransactionRepository.save(chargeTx);
 		} else {
@@ -228,9 +229,9 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 	@Transactional
 	public void withdrawComplete(WithdrawCompleteCommand command) {
-		Wallet userWallet = walletRepository.findByUserId(command.userId())
+		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
-		Wallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
+		SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
 
 		PointTransactionRequestHistory pointTxRequestHistory =
 			pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
@@ -245,8 +246,8 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
 			PointTransaction pointSourceTx = systemPointSourceWallet.increasePointSource(withdrawAmount, refId);
 
-			walletRepository.save(userWallet);
-			walletRepository.save(systemPointSourceWallet);
+			userWalletRepository.save(userWallet);
+			systemWalletRepository.save(systemPointSourceWallet);
 			pointTransactionRepository.save(withdrawTx);
 			pointTransactionRepository.save(pointSourceTx);
 		} else {

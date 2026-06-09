@@ -40,7 +40,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "wallet_id", nullable = false)
-	private Wallet wallet;
+	private UserWallet userWallet;
 
 	@Enumerated(EnumType.STRING)
 	private PointRequestType requestType;
@@ -58,11 +58,11 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	private PointShortage pointShortage;
 
 	public static PointTransactionRequestHistory paymentRequest(
-			Wallet wallet,
-			long requestPoint,
-			String idempotencyKey
+		UserWallet userWallet,
+		long requestPoint,
+		String idempotencyKey
 	) {
-		if (wallet == null) {
+		if (userWallet == null) {
 			throw new IllegalArgumentException("지갑은 필수");
 		}
 		if (requestPoint <= 0) {
@@ -70,7 +70,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 		}
 
 		PointTransactionRequestHistory pointTransactionRequestHistory = new PointTransactionRequestHistory();
-		pointTransactionRequestHistory.wallet = wallet;
+		pointTransactionRequestHistory.userWallet = userWallet;
 		pointTransactionRequestHistory.requestPoint = requestPoint;
 		pointTransactionRequestHistory.requestType = PointRequestType.CHARGE;
 		pointTransactionRequestHistory.status = PointRequestStatus.REQUESTED;
@@ -82,22 +82,22 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	private String idempotencyKey;
 
 	public static PointTransactionRequestHistory payoutRequest(
-		Wallet wallet,
+		UserWallet userWallet,
 		long requestPoint,
 		String idempotencyKey
 	) {
-		if (wallet == null) {
+		if (userWallet == null) {
 			throw new IllegalArgumentException("지갑은 필수");
 		}
 		if (requestPoint <= 0) {
 			throw new IllegalArgumentException("출금 금액은 1원 이상이어야 합니다.");
 		}
-		if (wallet.checkBalance() < requestPoint) {
+		if (userWallet.checkBalance() < requestPoint) {
 			throw new IllegalArgumentException("출금 불가능");
 		}
 
 		PointTransactionRequestHistory pointTransactionRequestHistory = new PointTransactionRequestHistory();
-		pointTransactionRequestHistory.wallet = wallet;
+		pointTransactionRequestHistory.userWallet = userWallet;
 		pointTransactionRequestHistory.requestPoint = requestPoint;
 		pointTransactionRequestHistory.requestType = PointRequestType.PAYOUT;
 		pointTransactionRequestHistory.status = PointRequestStatus.REQUESTED;
@@ -107,7 +107,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	}
 
 	public static PointTransactionRequestHistory orderPaymentAttempt(
-		Wallet wallet,
+		UserWallet wallet,
 		long requestPoint,
 		UUID refId,
 		String idempotencyKey
@@ -120,7 +120,7 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 		}
 
 		PointTransactionRequestHistory pointTransactionRequestHistory = new PointTransactionRequestHistory();
-		pointTransactionRequestHistory.wallet = wallet;
+		pointTransactionRequestHistory.userWallet = wallet;
 		pointTransactionRequestHistory.requestPoint = requestPoint;
 		pointTransactionRequestHistory.refId = refId;
 		pointTransactionRequestHistory.requestType = PointRequestType.ORDER_PAYMENT;
@@ -152,8 +152,8 @@ public class PointTransactionRequestHistory extends BaseTimeEntity { // created,
 	public void insufficient() {
 		PointShortage shortage = PointShortage.of(
 			this,
-			this.requestPoint - wallet.checkBalance(),
-			wallet.checkBalance());
+			this.requestPoint - userWallet.checkBalance(),
+			userWallet.checkBalance());
 		this.addShortage(shortage);
 		this.status = PointRequestStatus.INSUFFICIENT;
 	}

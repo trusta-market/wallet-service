@@ -2,10 +2,10 @@ package com.trustamarket.walletservice.wallet.application.creator;
 
 import java.util.UUID;
 
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
-import com.trustamarket.walletservice.wallet.domain.enums.WalletType;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.enums.SystemWalletType;
 
 public interface SystemWalletCreator {
-	WalletType getType();
-	Wallet create(UUID operatorId);
+	SystemWalletType getType();
+	SystemWallet create(UUID operatorId);
 }

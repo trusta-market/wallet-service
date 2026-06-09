@@ -4,9 +4,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.trustamarket.walletservice.wallet.domain.entity.Wallet;
-import com.trustamarket.walletservice.wallet.domain.enums.WalletType;
-import com.trustamarket.walletservice.wallet.domain.repository.WalletRepository;
+import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
+import com.trustamarket.walletservice.wallet.domain.enums.SystemWalletType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -14,12 +13,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SystemFeeWalletCreator implements SystemWalletCreator{
 	@Override
-	public WalletType getType() {
-		return WalletType.SYSTEM_FEE;
+	public SystemWalletType getType() {
+		return SystemWalletType.SYSTEM_FEE;
 	}
 
 	@Override
-	public Wallet create(UUID operatorId) {
-		return Wallet.createSystemFeeWallet(operatorId);
+	public SystemWallet create(UUID operatorId) {
+		return SystemWallet.createSystemFeeWallet(operatorId);
 	}
 }
