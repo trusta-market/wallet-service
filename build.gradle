@@ -26,7 +26,6 @@ repositories {
 
 ext {
 	set('springCloudVersion', "2025.0.2")
-	set('springCloudGcpVersion', "5.8.0")   // for trace
 }
 
 dependencies {
@@ -41,10 +40,8 @@ dependencies {
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'org.springframework.kafka:spring-kafka'
 
-	implementation('com.google.cloud:spring-cloud-gcp-starter-trace') {
-		exclude group: 'io.grpc', module: 'grpc-netty-shaded'
-	}
-	implementation 'io.grpc:grpc-okhttp'
+	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+	implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 	implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
@@ -63,7 +60,6 @@ dependencies {
 dependencyManagement {
 	imports {
 		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-		mavenBom "com.google.cloud:spring-cloud-gcp-dependencies:${springCloudGcpVersion}"
 	}
 }
 
