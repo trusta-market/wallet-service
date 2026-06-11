@@ -87,6 +87,8 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8302
+            timeoutSeconds: 5      # 1초 → 5초 기다려줌
+            failureThreshold: 6    # 3번 → 6번까지 봐줌
             periodSeconds: 10
           readinessProbe:
             httpGet:
