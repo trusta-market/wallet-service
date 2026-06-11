@@ -9,9 +9,7 @@ import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionR
 
 import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class IdempotencyHandler {
@@ -19,9 +17,7 @@ public class IdempotencyHandler {
 
 	@Observed(name = "wallet.idempotency-check")
 	public Optional<PointTransactionRequestHistory> check(String idempotencyKey) {
-		long t0 = System.currentTimeMillis();
 		Optional<PointTransactionRequestHistory> pointTxRequestHistory = pointTxRequestHistoryRepository.findByIdempotencyKey(idempotencyKey);
-		log.info("[idempotency-check] {}ms", System.currentTimeMillis() - t0);
 
 		if (pointTxRequestHistory.isEmpty()) {
 			return Optional.empty();
