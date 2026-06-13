@@ -28,6 +28,7 @@ spec:
                   - key: app
                     operator: Exists
               topologyKey: kubernetes.io/hostname
+              namespaces: ["default", "kafka"]
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
