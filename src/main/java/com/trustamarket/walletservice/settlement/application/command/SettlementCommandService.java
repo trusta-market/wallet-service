@@ -12,6 +12,7 @@ import com.trustamarket.walletservice.settlement.domain.exception.SettlementExce
 import com.trustamarket.walletservice.settlement.domain.fee.FeeCalculation;
 import com.trustamarket.walletservice.settlement.domain.repository.SettlementHistoryRepository;
 
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,6 +22,7 @@ public class SettlementCommandService implements SettlementCommandUsecase {
 	private final SettlementHistoryRepository settlementHistoryRepository;
 	private final FeeCalculator feeCalculator;
 	private final SettlementWalletPort settlementWalletPort;
+	@Observed(name = "wallet.settlement-process")
 	@Override
 	@Transactional
 	public void process(SettlePointSettlementMessage message) {

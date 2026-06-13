@@ -16,6 +16,7 @@ import com.trustamarket.walletservice.wallet.application.command.WalletMessageUs
 import com.trustamarket.walletservice.wallet.application.dto.message.CancelMessage;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,6 +27,7 @@ public class PointCancelListener {
 
 	private final WalletMessageUsecase walletMessageUsecase;
 	private final ObjectMapper objectMapper;
+	@Observed(name = "wallet.cancel-listener")
 	@KafkaListener(
 		topics = "order.cancellation.requested",
 		groupId = "wallet-cancellation-group"

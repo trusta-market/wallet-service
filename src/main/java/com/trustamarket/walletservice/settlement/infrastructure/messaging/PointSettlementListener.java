@@ -15,6 +15,7 @@ import com.trustamarket.walletservice.settlement.domain.entity.SettlementHistory
 import com.trustamarket.walletservice.settlement.domain.exception.SettlementErrorCode;
 import com.trustamarket.walletservice.settlement.domain.exception.SettlementException;
 
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +26,7 @@ public class PointSettlementListener {
 
 	private final SettlementCommandUsecase pointSettlementCommandUsecase;
 	private final ObjectMapper objectMapper;
+	@Observed(name = "wallet.settlement-listener")
 	@KafkaListener(
 		topics = "order.wallet-settlement.requested",
 		groupId = "wallet-settlement-group"
