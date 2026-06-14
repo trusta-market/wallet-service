@@ -171,10 +171,11 @@ class WalletCommandWithdrawServiceTest {
 		PointTransactionRequestHistory history = mock(PointTransactionRequestHistory.class);
 		given(history.getRequestPoint()).willReturn(requestedAmount);
 
+		UUID pointSourceWalletId = UUID.randomUUID();
 		SystemWallet systemPointSourceWallet = mock(SystemWallet.class);
-		PointTransaction pointSourceTx = mock(PointTransaction.class);
+		given(systemPointSourceWallet.getWalletId()).willReturn(pointSourceWalletId);
+		given(systemPointSourceWallet.checkBalance()).willReturn(50000L);
 		given(systemWalletProvider.getPointSourceWallet()).willReturn(systemPointSourceWallet);
-		given(systemPointSourceWallet.increasePointSource(actualAmount, paymentId)).willReturn(pointSourceTx);
 
 		UserWallet walletSpy = spy(wallet);
 		PointTransaction withdrawTx = mock(PointTransaction.class);
@@ -193,9 +194,9 @@ class WalletCommandWithdrawServiceTest {
 		// then
 		verify(walletSpy).withdraw(requestedAmount, actualAmount, paymentId);
 		verify(userWalletRepository).save(walletSpy);
-		verify(systemWalletRepository).save(systemPointSourceWallet);
+		verify(systemWalletRepository).increaseBalance(pointSourceWalletId, actualAmount);
 		verify(pointTransactionRepository).save(withdrawTx);
-		verify(pointTransactionRepository).save(pointSourceTx);
+		verify(pointTransactionRepository, times(1)).save(argThat(tx -> tx != withdrawTx));
 		verify(history).success();
 		verify(pointTxRequestHistoryRepository).save(history);
 	}
@@ -214,7 +215,6 @@ class WalletCommandWithdrawServiceTest {
 		PointTransactionRequestHistory history =
 			PointTransactionRequestHistory.payoutRequest(mockWallet, requestedAmount, idempotencyKey);
 
-		given(systemWalletProvider.getPointSourceWallet()).willReturn(mock(SystemWallet.class));
 		given(pointTxRequestHistoryRepository.findById(historyId))
 			.willReturn(Optional.of(history));
 		given(userWalletRepository.findByUserId(userId)).willReturn(Optional.of(mockWallet));
@@ -261,7 +261,6 @@ class WalletCommandWithdrawServiceTest {
 	void withdrawComplete_historyNotFound_throwsException() {
 		// given
 		UUID historyId = UUID.randomUUID();
-		given(systemWalletProvider.getPointSourceWallet()).willReturn(mock(SystemWallet.class));
 		given(userWalletRepository.findByUserId(userId)).willReturn(Optional.of(wallet));
 		given(pointTxRequestHistoryRepository.findById(historyId)).willReturn(Optional.empty());
 

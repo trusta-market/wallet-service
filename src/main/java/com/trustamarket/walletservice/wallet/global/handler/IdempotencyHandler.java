@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
 
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class IdempotencyHandler {
 	private final PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
 
+	@Observed(name = "wallet.idempotency-check")
 	public Optional<PointTransactionRequestHistory> check(String idempotencyKey) {
 		Optional<PointTransactionRequestHistory> pointTxRequestHistory = pointTxRequestHistoryRepository.findByIdempotencyKey(idempotencyKey);
 

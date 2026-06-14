@@ -116,10 +116,10 @@ class WalletCommandServiceTest {
 
 			// then
 			verify(pointTransactionRepository, times(1)).saveAll(anyList());
+			verify(systemWalletRepository).increaseBalance(escrowWallet.getWalletId(), totalAmount);
 
 			assertThat(result.balance()).isEqualTo(4000L);
 			assertThat(buyerWallet.checkBalance()).isEqualTo(4000L);
-			assertThat(escrowWallet.checkBalance()).isEqualTo(1000L);
 		}
 
 		@Test

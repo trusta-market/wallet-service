@@ -1,15 +1,17 @@
 package com.trustamarket.walletservice.wallet.application.command;
 
-import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
-
-import org.springframework.stereotype.Component;
-
 import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.SystemWalletType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.WALLET_NOT_FOUND_BY_TYPE;
 
 /*
 system wallet 종류가 늘어나도 SystemWalletProvider에서 수정
@@ -19,11 +21,27 @@ system wallet 종류가 늘어나도 SystemWalletProvider에서 수정
 @RequiredArgsConstructor
 public class SystemWalletProvider {
 	private final SystemWalletRepository systemWalletRepository;
+	// type별 walletId caching+
+	private final Map<SystemWalletType, UUID> walletIdCache = new ConcurrentHashMap<>();
+
+	private UUID getWalletId(SystemWalletType systemWalletType) {
+		return walletIdCache.computeIfAbsent(systemWalletType, t -> getByType(t).getWalletId());
+	}
+
+	public UUID getPointSourceWalletId() {
+		return getWalletId(SystemWalletType.SYSTEM_POINT_SOURCE);
+	}
+	public UUID getEscrowWalletId() {
+		return getWalletId(SystemWalletType.SYSTEM_ESCROW);
+	}
+	public UUID getFeeWalletId() {
+		return getWalletId(SystemWalletType.SYSTEM_FEE);
+	}
+
 
 	public SystemWallet getEscrowWallet() {
 		return getByType(SystemWalletType.SYSTEM_ESCROW);
 	}
-
 	public SystemWallet getFeeWallet() {
 		return getByType(SystemWalletType.SYSTEM_FEE);
 	}
@@ -36,3 +54,4 @@ public class SystemWalletProvider {
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND_BY_TYPE));
 	}
 }
+

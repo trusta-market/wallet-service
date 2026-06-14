@@ -2,6 +2,7 @@ package com.trustamarket.walletservice.wallet.infrastructure.payment;
 
 import java.util.UUID;
 
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Component;
 
 import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
@@ -18,6 +19,7 @@ public class PaymentAdapter implements PaymentPort {
 
     private final PaymentFeignClient paymentFeignClient;
 
+    @Observed(name = "wallet.payment-charge-point")
     @Override
     public ChargePointResult chargePoint(UUID userId, UUID pointTxRequestHistoryId, long chargeAmount) {
         PaymentPointRequest request = new PaymentPointRequest(userId, pointTxRequestHistoryId, chargeAmount);
@@ -31,6 +33,7 @@ public class PaymentAdapter implements PaymentPort {
         return result;
     }
 
+    @Observed(name = "wallet.payment-withdraw-point")
     @Override
     public void withdrawPoint(UUID userId, UUID pointTxRequestHistoryId, long withdrawAmount) {
         WithdrawRequest request = new WithdrawRequest(userId, pointTxRequestHistoryId, withdrawAmount);

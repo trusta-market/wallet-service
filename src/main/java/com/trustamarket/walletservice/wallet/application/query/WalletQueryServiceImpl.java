@@ -23,6 +23,7 @@ import com.trustamarket.walletservice.wallet.domain.repository.PointShortageRepo
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -34,6 +35,7 @@ public class WalletQueryServiceImpl implements WalletQueryService{
 
 	private static final int DEFAULT_PAGE_SIZE = 20;
 
+	@Observed(name = "wallet.get-point")
 	@Transactional(readOnly = true)
 	public long getPoint(UUID userId) {
 		UserWallet userWallet = userwalletRepository.findByUserId(userId).orElseThrow(
@@ -42,6 +44,7 @@ public class WalletQueryServiceImpl implements WalletQueryService{
 		return userWallet.checkBalance();
 	}
 
+	@Observed(name = "wallet.get-point-usage")
 	@Transactional(readOnly = true)
 	public GetPointUsageResult getPointUsageTx(UUID orderId) {
 		Optional<PointTransaction> pointTransaction =
@@ -68,6 +71,7 @@ public class WalletQueryServiceImpl implements WalletQueryService{
 		return GetPointUsageResult.notFound(orderId);
 	}
 
+	@Observed(name = "wallet.get-point-transactions")
 	@Transactional(readOnly = true)
 	public GetPointTransactionPageResult getPointTransactions(UUID userId, GetPointTransactionQuery query) {
 		UserWallet wallet = userwalletRepository.findByUserId(userId).orElseThrow(
