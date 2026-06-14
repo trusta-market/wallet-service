@@ -1,10 +1,5 @@
 package com.trustamarket.walletservice.wallet.application.command;
 
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
 import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawPointCommand;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
@@ -13,10 +8,13 @@ import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
-
 import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -24,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PointTxRequestService {
 	private final UserWalletRepository userWalletRepository;
 	private final PointTransactionRequestHistoryRepository pointTxRequestHistoryRepository;
+
 
 	@Observed(name = "wallet.withdraw-request-save")
 	@Transactional // find와 save간의 transaction

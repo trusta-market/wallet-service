@@ -1,17 +1,15 @@
 package com.trustamarket.walletservice.wallet.infrastructure.persistence;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.springframework.stereotype.Repository;
-
 import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.SystemWalletType;
 import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletRepository;
 import com.trustamarket.walletservice.wallet.infrastructure.persistence.jpa.SystemWalletJpaRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Repository
@@ -33,17 +31,17 @@ public class SystemWalletRepositoryImpl implements SystemWalletRepository {
 	}
 
 	@Override
-	public void increaseBalance(UUID walletId, long amount) {
-		walletJpaRepository.increaseBalance(walletId, amount);
+	public long increaseBalance(UUID walletId, long amount) {
+		return walletJpaRepository.increaseBalance(walletId, amount);
 	}
 
 	@Override
-	public int decreaseBalanceIfSufficient(UUID walletId, long amount) {
+	public Optional<Long> decreaseBalanceIfSufficient(UUID walletId, long amount) {
 		return walletJpaRepository.decreaseBalanceIfSufficient(walletId, amount);
 	}
 
 	@Override
-	public void decreaseBalanceUnchecked(UUID walletId, long amount) {
-		walletJpaRepository.decreaseBalanceUnchecked(walletId, amount);
+	public long decreaseBalanceUnchecked(UUID walletId, long amount) {
+		return walletJpaRepository.decreaseBalanceUnchecked(walletId, amount);
 	}
 }
