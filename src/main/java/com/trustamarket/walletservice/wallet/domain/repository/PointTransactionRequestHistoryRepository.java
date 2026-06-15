@@ -12,4 +12,7 @@ public interface PointTransactionRequestHistoryRepository {
 	Optional<PointTransactionRequestHistory> findByIdempotencyKey(String IdempotencyKey); //멱등키 저장 관련 고민 필요
 	Optional<PointTransactionRequestHistory> findByIdempotencyKeyAndRefIdAndPointRequestType(String IdempotencyKey, UUID refId, PointRequestType pointRequestType);
 	boolean existsById(UUID pointTxHistoryId);
+
+	// REQUESTED→status 원자적 전이, request_point 반환(없거나 이미 처리=empty)
+	Optional<Long> updateStatusFromRequested(UUID id, String status);
 }

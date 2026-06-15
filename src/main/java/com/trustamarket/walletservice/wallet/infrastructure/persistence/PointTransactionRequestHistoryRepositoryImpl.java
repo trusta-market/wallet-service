@@ -42,4 +42,9 @@ public class PointTransactionRequestHistoryRepositoryImpl implements PointTransa
 	public boolean existsById(UUID pointTxHistoryId) {
 		return pointTransactionRequestHistoryRepository.existsById(pointTxHistoryId);
 	}
+
+	@Override
+	public Optional<Long> updateStatusFromRequested(UUID id, String status) {
+		return pointTransactionRequestHistoryRepository.updateStatusFromRequested(id, status);
+	}
 }

@@ -30,6 +30,7 @@ import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
 import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
 import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
 import com.trustamarket.walletservice.wallet.domain.entity.SystemWalletOutbox;
+		import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletOutboxRepository;
 import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
@@ -39,7 +40,6 @@ import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletOutboxRepository;
 import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
 import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
 
@@ -230,37 +230,35 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	@Observed(name = "wallet.charge-complete")
 	@Transactional
 	public void chargeComplete(ChargeCompleteCommand command) {
-		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
-				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
-		SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
-
+		UUID historyId = command.pointTxRequestHistoryId();
 		long chargeAmount = command.chargedAmount();
 		UUID refId = command.paymentId();
 
-		PointTransactionRequestHistory pointTxRequestHistory =
-				pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
-						.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
-
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
-			pointTxRequestHistory.success();
-			UUID systemPointSourceWalletId = systemPointSourceWallet.getWalletId();
+			// 상태 REQUESTED→SUCCESS 원자적 전이 (없음/이미 처리=0행→예외). findById SELECT 제거.
+			pointTxRequestHistoryRepository.updateStatusFromRequested(historyId, PointRequestStatus.SUCCESS.name())
+				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
+
+			UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
+				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
+			UUID systemPointSourceWalletId = systemWalletProvider.getPointSourceWalletId(); // 캐시 — SELECT 제거
 			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
-			PointTransaction pointSourceTx = systemPointSourceWallet.recordDecreasePointSourceTx(chargeAmount, refId);
+			PointTransaction pointSourceTx = PointTransaction.createSystemWalletTx(
+				systemPointSourceWalletId, -chargeAmount, PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
 
 			userWalletRepository.save(userWallet);
 			pointTransactionRepository.save(chargeTx);
-
 			pointTransactionRepository.save(pointSourceTx);
+
 			SystemWalletOutbox outbox = SystemWalletOutbox.create(systemPointSourceWalletId , -chargeAmount,
 				PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
 			systemWalletOutboxRepository.save(outbox);
 
 			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), systemPointSourceWalletId));
 		} else {
-			pointTxRequestHistory.fail();
+			pointTxRequestHistoryRepository.updateStatusFromRequested(historyId, PointRequestStatus.FAILED.name())
+				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
 		}
-
-		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 	}
 
 	@Observed(name = "wallet.withdraw-point")
@@ -303,38 +301,36 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 	@Observed(name = "wallet.withdraw-complete")
 	@Transactional
 	public void withdrawComplete(WithdrawCompleteCommand command) {
-		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
-			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
-		SystemWallet systemPointSourceWallet = systemWalletProvider.getPointSourceWallet();
-
-		PointTransactionRequestHistory pointTxRequestHistory =
-			pointTxRequestHistoryRepository.findById(command.pointTxRequestHistoryId())
-				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
-
+		UUID historyId = command.pointTxRequestHistoryId();
 		long withdrawAmount = command.withdrawAmount();
 		UUID refId = command.paymentId();
 
 		if(PointRequestStatus.SUCCESS == command.requestResultStatus()) {
-			pointTxRequestHistory.success();
-			UUID pointSourceWalletId = systemPointSourceWallet.getWalletId();
-			long requestedAmount = pointTxRequestHistory.getRequestPoint();
+			// 상태 REQUESTED→SUCCESS 원자적 전이 + request_point 회수 (없음/이미 처리=0행→예외). findById SELECT 제거.
+			long requestedAmount = pointTxRequestHistoryRepository
+				.updateStatusFromRequested(historyId, PointRequestStatus.SUCCESS.name())
+				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
+
+			UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
+				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
+			UUID pointSourceWalletId = systemWalletProvider.getPointSourceWalletId(); // 캐시 — SELECT 제거
 
 			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
-			PointTransaction pointSourceTx = systemPointSourceWallet.recordIncreasePointSourceTx(withdrawAmount, refId);
+			PointTransaction pointSourceTx = PointTransaction.createSystemWalletTx(
+				pointSourceWalletId, withdrawAmount, PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);
 
 			userWalletRepository.save(userWallet);
 			pointTransactionRepository.save(withdrawTx);
-
 			pointTransactionRepository.save(pointSourceTx);
+
 			SystemWalletOutbox outbox = SystemWalletOutbox.create(pointSourceWalletId, withdrawAmount,
 				PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);
 			systemWalletOutboxRepository.save(outbox);
 
 			applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), pointSourceWalletId));
 		} else {
-			pointTxRequestHistory.fail();
+			pointTxRequestHistoryRepository.updateStatusFromRequested(historyId, PointRequestStatus.FAILED.name())
+				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
 		}
-
-		pointTxRequestHistoryRepository.save(pointTxRequestHistory);
 	}
 }
