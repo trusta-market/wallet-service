@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
 import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.WalletBalance;
 import com.trustamarket.walletservice.wallet.infrastructure.persistence.jpa.UserWalletJpaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -37,5 +38,15 @@ public class UserWalletRepositoryImpl implements UserWalletRepository {
 	@Override
 	public UserWallet getReferenceByWalletId(UUID walletId) {
 		return walletJpaRepository.getReferenceById(walletId);
+	}
+
+	@Override
+	public Optional<WalletBalance> increaseBalanceByUserId(UUID userId, long amount) {
+		return walletJpaRepository.increaseBalanceByUserId(userId, amount);
+	}
+
+	@Override
+	public Optional<WalletBalance> decreaseBalanceByUserIdIfEnough(UUID userId, long amount) {
+		return walletJpaRepository.decreaseBalanceByUserIdIfEnough(userId, amount);
 	}
 }

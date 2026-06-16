@@ -1,50 +1,36 @@
 package com.trustamarket.walletservice.wallet.application.command;
 
-import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import io.micrometer.observation.annotation.Observed;
-import org.springframework.util.StopWatch;
-
-import com.trustamarket.walletservice.wallet.application.dto.command.ChargeCompleteCommand;
-import com.trustamarket.walletservice.wallet.application.dto.command.ChargePointCommand;
-import com.trustamarket.walletservice.wallet.application.dto.command.UseWalletCommand;
-import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawCompleteCommand;
-import com.trustamarket.walletservice.wallet.application.dto.command.WithdrawPointCommand;
+import com.trustamarket.walletservice.wallet.application.dto.command.*;
 import com.trustamarket.walletservice.wallet.application.dto.event.SystemWalletOutboxEvent;
 import com.trustamarket.walletservice.wallet.application.dto.result.ChargePointResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.CreateWalletResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.UseWalletResult;
 import com.trustamarket.walletservice.wallet.application.dto.result.WithdrawPointResult;
 import com.trustamarket.walletservice.wallet.application.port.PaymentPort;
-import com.trustamarket.walletservice.wallet.domain.entity.PointShortage;
-import com.trustamarket.walletservice.wallet.domain.entity.PointTransaction;
-import com.trustamarket.walletservice.wallet.domain.entity.PointTransactionRequestHistory;
-import com.trustamarket.walletservice.wallet.domain.entity.SystemWallet;
-import com.trustamarket.walletservice.wallet.domain.entity.SystemWalletOutbox;
-		import com.trustamarket.walletservice.wallet.domain.repository.SystemWalletOutboxRepository;
-import com.trustamarket.walletservice.wallet.domain.entity.UserWallet;
+import com.trustamarket.walletservice.wallet.domain.entity.*;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestStatus;
 import com.trustamarket.walletservice.wallet.domain.enums.PointRequestType;
 import com.trustamarket.walletservice.wallet.domain.enums.PointTxType;
 import com.trustamarket.walletservice.wallet.domain.enums.RefType;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode;
 import com.trustamarket.walletservice.wallet.domain.exception.WalletException;
-import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.PointTransactionRequestHistoryRepository;
-import com.trustamarket.walletservice.wallet.domain.repository.UserWalletRepository;
+import com.trustamarket.walletservice.wallet.domain.repository.*;
 import com.trustamarket.walletservice.wallet.global.handler.IdempotencyHandler;
-
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StopWatch;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static com.trustamarket.walletservice.wallet.domain.exception.WalletErrorCode.*;
 
 @Slf4j
 @Service
@@ -238,16 +224,17 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			pointTxRequestHistoryRepository.updateStatusFromRequested(historyId, PointRequestStatus.SUCCESS.name())
 				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
 
-			UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
-				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 			UUID systemPointSourceWalletId = systemWalletProvider.getPointSourceWalletId(); // 캐시 — SELECT 제거
-			PointTransaction chargeTx = userWallet.chargeComplete(chargeAmount, refId);
+			WalletBalance wallet = userWalletRepository.increaseBalanceByUserId(command.userId(), chargeAmount)
+				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
+			PointTransaction chargeTx = PointTransaction.createUserWalletTx(
+				wallet.getWalletId(), wallet.getBalance(), chargeAmount,
+				PointTxType.CHARGE, refId, RefType.PAYMENT);
 			PointTransaction pointSourceTx = PointTransaction.createSystemWalletTx(
 				systemPointSourceWalletId, -chargeAmount, PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
 
-			userWalletRepository.save(userWallet);
-			pointTransactionRepository.save(chargeTx);
-			pointTransactionRepository.save(pointSourceTx);
+			// 같은 테이블(p_point_transactions) INSERT 2건을 묶어 batch INSERT 1왕복으로.
+			pointTransactionRepository.saveAll(List.of(chargeTx, pointSourceTx));
 
 			SystemWalletOutbox outbox = SystemWalletOutbox.create(systemPointSourceWalletId , -chargeAmount,
 				PointTxType.POINT_SOURCE_OUT, refId, RefType.PAYMENT);
@@ -310,17 +297,21 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 				.updateStatusFromRequested(historyId, PointRequestStatus.SUCCESS.name())
 				.orElseThrow(() -> new WalletException(WALLET_POINT_TX_REQUEST_NOT_FOUND));
 
-			UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
-				.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
+			if (withdrawAmount != requestedAmount) {
+				throw new IllegalArgumentException("출금된 금액과 요청한 포인트가 다릅니다");
+			}
 			UUID pointSourceWalletId = systemWalletProvider.getPointSourceWalletId(); // 캐시 — SELECT 제거
 
-			PointTransaction withdrawTx = userWallet.withdraw(requestedAmount, withdrawAmount, refId);
+			WalletBalance wallet = userWalletRepository.decreaseBalanceByUserIdIfEnough(command.userId(), withdrawAmount)
+				.orElseThrow(() -> new WalletException(INVALID_BALANCE)); // 없음/비활성/잔액부족
+			PointTransaction withdrawTx = PointTransaction.createUserWalletTx(
+				wallet.getWalletId(), wallet.getBalance(), -withdrawAmount,
+				PointTxType.WITHDRAW, refId, RefType.PAYMENT);
 			PointTransaction pointSourceTx = PointTransaction.createSystemWalletTx(
 				pointSourceWalletId, withdrawAmount, PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);
 
-			userWalletRepository.save(userWallet);
-			pointTransactionRepository.save(withdrawTx);
-			pointTransactionRepository.save(pointSourceTx);
+			// 같은 테이블(p_point_transactions) INSERT 2건을 묶어 batch INSERT 1왕복으로.
+			pointTransactionRepository.saveAll(List.of(withdrawTx, pointSourceTx));
 
 			SystemWalletOutbox outbox = SystemWalletOutbox.create(pointSourceWalletId, withdrawAmount,
 				PointTxType.POINT_SOURCE_IN, refId, RefType.PAYMENT);

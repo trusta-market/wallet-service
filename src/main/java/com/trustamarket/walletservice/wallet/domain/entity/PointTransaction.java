@@ -81,6 +81,19 @@ public class PointTransaction extends BaseCreatedEntity {
 		return tx;
 	}
 
+	// user 지갑용 — 원자적 UPDATE의 변경 후 잔액(balanceAfter)으로 거래 기록 생성.
+	// 엔티티를 load하지 않는 경로(atomic UPDATE)에서도 balance_after 역산은 도메인이 책임진다.
+	public static PointTransaction createUserWalletTx(
+		UUID walletId,
+		long balanceAfter,
+		long changedBalance,
+		PointTxType pointTxType,
+		UUID refId,
+		RefType refType
+	) {
+		return create(walletId, balanceAfter - changedBalance, changedBalance, pointTxType, refId, refType);
+	}
+
 	// 주 트랜잭션용 — balance 건드리지 않고 PT만 생성
 	public static PointTransaction createSystemWalletTx(
 		UUID walletId,
