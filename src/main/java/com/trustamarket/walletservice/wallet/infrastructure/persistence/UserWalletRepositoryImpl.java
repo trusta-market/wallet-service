@@ -28,4 +28,14 @@ public class UserWalletRepositoryImpl implements UserWalletRepository {
 	public Optional<UserWallet> findByUserId(UUID userId) {
 		return walletJpaRepository.findByUserId(userId);
 	}
+
+	@Override
+	public Optional<UUID> findWalletIdByUserId(UUID userId) {
+		return walletJpaRepository.findWalletIdByUserId(userId);
+	}
+
+	@Override
+	public UserWallet getReferenceByWalletId(UUID walletId) {
+		return walletJpaRepository.getReferenceById(walletId);
+	}
 }

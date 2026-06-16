@@ -28,7 +28,8 @@ public class PointTxRequestService {
 	@Observed(name = "wallet.withdraw-request-save")
 	@Transactional // find와 save간의 transaction
 	public UUID withdrawPointRequest(WithdrawPointCommand command) {
-		log.info("[withdrawPointRequest] userId={} amount={}", command.userId(), command.withdrawAmount());
+		if (log.isDebugEnabled())
+			log.debug("[withdrawPointRequest] userId={} amount={}", command.userId(), command.withdrawAmount());
 
 		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
 			.orElseThrow(() -> {
@@ -36,7 +37,8 @@ public class PointTxRequestService {
 				return new WalletException(WalletErrorCode.WALLET_NOT_FOUND);
 			});
 
-		log.info("[withdrawPointRequest] balance={} requested={}", userWallet.checkBalance(), command.withdrawAmount());
+		if (log.isDebugEnabled())
+			log.debug("[withdrawPointRequest] balance={} requested={}", userWallet.checkBalance(), command.withdrawAmount());
 
 		if(!userWallet.isEnough(command.withdrawAmount())) {
 			log.warn("[withdrawPointRequest] insufficient balance userId={} balance={} requested={}",
@@ -48,18 +50,22 @@ public class PointTxRequestService {
 			PointTransactionRequestHistory.payoutRequest(userWallet, command.withdrawAmount(), command.idempotencyKey())
 		);
 
-		log.info("[withdrawPointRequest] saved historyId={}", pointTxRequestHistory.getPointTxRequestHistoryId());
+		if (log.isDebugEnabled())
+			log.debug("[withdrawPointRequest] saved historyId={}", pointTxRequestHistory.getPointTxRequestHistoryId());
 		return pointTxRequestHistory.getPointTxRequestHistoryId();
 	}
 
 	@Observed(name = "wallet.charge-request-save")
 	@Transactional
 	public UUID chargePointRequest(ChargePointCommand command) {
-		UserWallet userWallet = userWalletRepository.findByUserId(command.userId())
+		// 충전 요청은 잔액 검증이 없어 UserWallet 전체 로드가 불필요 →
+		// walletId만 경량 조회 후 프록시 참조로 연관관계만 설정 (엔티티 hydration·dirty-check 회피).
+		UUID walletId = userWalletRepository.findWalletIdByUserId(command.userId())
 				.orElseThrow(() -> new WalletException(WalletErrorCode.WALLET_NOT_FOUND));
+		UserWallet userWalletRef = userWalletRepository.getReferenceByWalletId(walletId);
 
 		PointTransactionRequestHistory pointTxRequestHistory = pointTxRequestHistoryRepository.save(
-				PointTransactionRequestHistory.paymentRequest(userWallet, command.chargeAmount(), command.idempotencyKey())
+				PointTransactionRequestHistory.paymentRequest(userWalletRef, command.chargeAmount(), command.idempotencyKey())
 		);
 
 		return pointTxRequestHistory.getPointTxRequestHistoryId();

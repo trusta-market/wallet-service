@@ -156,7 +156,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 
 		applicationEventPublisher.publishEvent(SystemWalletOutboxEvent.of(outbox.getOutboxId(), escrowWalletId));
 
-		log.info("[usePoint] {}", sw.prettyPrint());
+		if (log.isDebugEnabled()) log.debug("[usePoint] {}", sw.prettyPrint());
 		return UseWalletResult.success(buyerWallet.checkBalance());
 	}
 
@@ -170,7 +170,6 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 			.orElseThrow(() -> new WalletException(WALLET_NOT_FOUND));
 
 		List<PointTransaction> transactions = new ArrayList<>();
-		System.out.println(orderTotalAmount);
 		transactions.add(escrowWallet.recordSettleOutTx(orderTotalAmount, orderId));
 
 		if (sellerAmount > 0) {
@@ -223,7 +222,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		ChargePointResult result = paymentPort.chargePoint(command.userId(), historyId, command.chargeAmount());
 		sw.stop();
 
-		log.info("[chargePoint] {}", sw.prettyPrint());
+		if (log.isDebugEnabled()) log.debug("[chargePoint] {}", sw.prettyPrint());
 		return result;
 	}
 
@@ -294,7 +293,7 @@ public class WalletCommandServiceImpl implements WalletCommandService {
 		}
 		sw.stop();
 
-		log.info("[withdrawPoint] {}", sw.prettyPrint());
+		if (log.isDebugEnabled()) log.debug("[withdrawPoint] {}", sw.prettyPrint());
 		return new WithdrawPointResult(historyId);
 	}
 
